@@ -28,9 +28,10 @@ export class GamerService {
       // 加上時間戳參數避免快取
       const timestamp = Date.now();
 
-      // 使用 crawlerService 替換 axios.get
+      // 使用 crawlerService 替換 axios.get，添加 useProxy: true
       const page = await this.crawlerService.fetchUrl(
         `https://i2.bahamut.com.tw/JS/ad/animeVideo.js?v=${timestamp}`,
+        { useProxy: true },
       );
 
       if (!page) {
@@ -85,11 +86,11 @@ export class GamerService {
       await this.crawlerService.init();
 
       try {
-        // 獲取 deviceid
+        // 獲取 deviceid - 添加 useProxy: true
         this.logger.log('獲取 deviceId');
         const deviceIdPage = await this.crawlerService.fetchUrl(
           'https://ani.gamer.com.tw/ajax/getdeviceid.php?id=00862888f34dc1a8af5fe4fe17c3f07ea1e89872fd235e5467ef52c59343',
-          { waitUntil: 'networkidle2' },
+          { waitUntil: 'networkidle2', useProxy: true },
         );
 
         if (!deviceIdPage) {
@@ -134,13 +135,13 @@ export class GamerService {
           Cookie: cookieString,
         };
 
-        // 預先解鎖
-        await this.unLockDeviceIdAndSn(deviceId, sn, headers);
+        // 預先解鎖 - 添加 useProxy: true
+        await this.unLockDeviceIdAndSn(deviceId, sn, headers, true);
 
-        // 3. 發送 AD_ID 請求
+        // 3. 發送 AD_ID 請求 - 添加 useProxy: true
         await this.crawlerService.fetchUrl(
           `https://ani.gamer.com.tw/ajax/videoCastcishu.php?s=${adId}&sn=${sn}`,
-          { waitUntil: 'networkidle2', headers },
+          { waitUntil: 'networkidle2', headers, useProxy: true },
         );
         this.logger.log('已發送 AD_ID 請求');
 
@@ -149,18 +150,18 @@ export class GamerService {
         const maxRetries = 12; // 60 秒 / 5 秒 = 12 次
 
         while (!m3u8Url && retryCount < maxRetries) {
-          // 每次循環都發送廣告結束請求
+          // 每次循環都發送廣告結束請求 - 添加 useProxy: true
           await this.crawlerService.fetchUrl(
             `https://ani.gamer.com.tw/ajax/videoCastcishu.php?s=${adId}&sn=${sn}&ad=end`,
-            { waitUntil: 'networkidle2', headers },
+            { waitUntil: 'networkidle2', headers, useProxy: true },
           );
           this.logger.log(`第 ${retryCount + 1} 次發送廣告結束請求`);
 
-          // 嘗試獲取 m3u8
+          // 嘗試獲取 m3u8 - 添加 useProxy: true
           try {
             const m3u8Page = await this.crawlerService.fetchUrl(
               `https://ani.gamer.com.tw/ajax/m3u8.php?sn=${sn}&device=${deviceId}`,
-              { waitUntil: 'networkidle2', headers },
+              { waitUntil: 'networkidle2', headers, useProxy: true },
             );
 
             if (!m3u8Page) {
@@ -195,9 +196,9 @@ export class GamerService {
           retryCount++;
         }
 
-        // 5. 無論是否獲取到 m3u8，都執行解鎖流程
+        // 5. 無論是否獲取到 m3u8，都執行解鎖流程 - 添加 useProxy: true
         this.logger.log('執行解鎖流程');
-        await this.unLockDeviceIdAndSn(deviceId, sn, headers);
+        await this.unLockDeviceIdAndSn(deviceId, sn, headers, true);
       } finally {
         // 不需要關閉瀏覽器，CrawlerService 將負責管理
       }
@@ -221,21 +222,22 @@ export class GamerService {
     }
   }
 
-  // 這個方法也需要更改為使用 crawlerService
+  // 修改 unLockDeviceIdAndSn 方法，添加 useProxy 參數
   async unLockDeviceIdAndSn(
     deviceId: string,
     sn: string,
     headers?: Record<string, string>,
+    useProxy: boolean = true,
   ) {
     try {
       const requestHeaders = headers || {
         referer: `https://ani.gamer.com.tw/animeVideo.php?sn=${sn}`,
       };
 
-      // 發送解鎖請求
+      // 發送解鎖請求 - 添加 useProxy
       const unlockPage = await this.crawlerService.fetchUrl(
         `https://ani.gamer.com.tw/ajax/unlock.php?device=${deviceId}&sn=${sn}&ttl=0`,
-        { headers: requestHeaders },
+        { headers: requestHeaders, useProxy: useProxy },
       );
 
       if (!unlockPage) {
@@ -252,10 +254,10 @@ export class GamerService {
 
       this.logger.log(`解鎖請求回應: ${JSON.stringify(unlockJson)}`);
 
-      // 檢查是否解鎖成功
+      // 檢查是否解鎖成功 - 添加 useProxy
       const checkLockPage = await this.crawlerService.fetchUrl(
         `https://ani.gamer.com.tw/ajax/checklock.php?device=${deviceId}&sn=${sn}`,
-        { headers: requestHeaders },
+        { headers: requestHeaders, useProxy: useProxy },
       );
 
       if (!checkLockPage) {
