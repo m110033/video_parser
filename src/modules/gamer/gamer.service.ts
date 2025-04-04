@@ -365,8 +365,7 @@ export class GamerService {
           const title = $el.find('.theme-name').text();
 
           // 提取圖片 URL
-          const imgStyle = $el.find('.theme-img-bg').attr('style') || '';
-          const img = this.strBetween(imgStyle, '"', '"');
+          const img = $el.find('.theme-img').attr('src') || '';
 
           // 提取年份信息
           const yearTxt = $el.find('.theme-time').text() + '共';
