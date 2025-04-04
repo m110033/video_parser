@@ -1,0 +1,12 @@
+{
+  "editor.formatOnSave": true, // 儲存時自動格式化
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always" // 儲存時自動修復 ESLint 問題
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ]
+}

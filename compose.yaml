@@ -1,0 +1,20 @@
+services:
+  video:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Taipei
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - CHROMIUN_BROWSER_PATH=/usr/bin/chromium-browser
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
