@@ -7,12 +7,16 @@ import * as cheerio from 'cheerio';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import dayjs from 'dayjs';
 import { MovieClass } from 'src/common/movie.model';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GamerService {
   private readonly logger = new Logger(GamerService.name);
 
-  constructor(private readonly crawlerService: CrawlerService) {}
+  constructor(
+    private readonly crawlerService: CrawlerService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // 從字串中擷取兩個字符間的內容
   private strBetween(str: string, start: string, end: string): string {
@@ -328,7 +332,9 @@ export class GamerService {
       );
 
       // 限制最多爬取 15 頁
-      const maxPages = 15;
+      const maxPages = parseInt(
+        this.configService.get<string>('CRAWLER_MAX_PAGES') || '15',
+      );
       const pagesToCrawl = Math.min(pageNum, maxPages);
 
       this.logger.log(`總共有 ${pageNum} 頁動畫，將爬取前 ${pagesToCrawl} 頁`);
@@ -365,7 +371,7 @@ export class GamerService {
           const title = $el.find('.theme-name').text();
 
           // 提取圖片 URL
-          const img = $el.find('.theme-img').attr('src') || '';
+          const img = $el.find('.theme-img').attr('data-src') || '';
 
           // 提取年份信息
           const yearTxt = $el.find('.theme-time').text() + '共';
