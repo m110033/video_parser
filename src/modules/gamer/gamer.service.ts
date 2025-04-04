@@ -327,7 +327,11 @@ export class GamerService {
         this.strBetween(pageNumStr, '...<a href="?page=', '&').trim(),
       );
 
-      this.logger.log(`總共有 ${pageNum} 頁動畫`);
+      // 限制最多爬取 15 頁
+      const maxPages = 15;
+      const pagesToCrawl = Math.min(pageNum, maxPages);
+
+      this.logger.log(`總共有 ${pageNum} 頁動畫，將爬取前 ${pagesToCrawl} 頁`);
 
       // 收集所有動畫數據，以便後續排序
       const allAnimes: Array<{
@@ -338,9 +342,9 @@ export class GamerService {
         dateObj: Date;
       }> = [];
 
-      // 遍歷每一頁
-      for (let pageIndex = 1; pageIndex <= pageNum; pageIndex++) {
-        this.logger.debug(`正在解析第 ${pageIndex}/${pageNum} 頁`);
+      // 遍歷每一頁，但最多只爬取 maxPages 頁
+      for (let pageIndex = 1; pageIndex <= pagesToCrawl; pageIndex++) {
+        this.logger.debug(`正在解析第 ${pageIndex}/${pagesToCrawl} 頁`);
 
         const pageUrl = `https://ani.gamer.com.tw/animeList.php?page=${pageIndex}&c=0`;
         const pageResponse = await this.crawlerService.fetchUrl(pageUrl);
@@ -394,7 +398,7 @@ export class GamerService {
         });
 
         // 避免請求過於頻繁
-        if (pageIndex < pageNum) {
+        if (pageIndex < pagesToCrawl) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
