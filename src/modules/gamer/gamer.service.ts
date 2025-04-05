@@ -85,14 +85,86 @@ export class GamerService {
     }
   }
 
+  private async getSNFromUrl(url: string): Promise<string> {
+    try {
+      let SN = '';
+      this.logger.log(`正在從 URL 解析 SN: ${url}`);
+
+      // 按照原邏輯判斷 URL 是否包含 "animeVideo"
+      if (url.indexOf('animeVideo') < 0) {
+        // 獲取參考頁面內容
+        const refPage = await this.crawlerService.fetchUrl(url, {
+          waitUntil: 'domcontentloaded',
+        });
+
+        if (!refPage) {
+          throw new Error('無法獲取參考頁面');
+        }
+
+        // 從參考頁面 HTML 中提取 SN
+        SN = await refPage.evaluate(() => {
+          // 首先嘗試獲取 og:url meta 標籤
+          const metaOgUrl = document.querySelector('meta[property="og:url"]');
+          if (metaOgUrl) {
+            const ogUrl = metaOgUrl.getAttribute('content') || '';
+            // 從 og:url 中提取 SN
+            const match = ogUrl.match(/animeVideo\.php\?sn=(\d+)/);
+            if (match && match[1]) {
+              return match[1];
+            }
+          }
+
+          // 備用方法：尋找頁面上的 animeVideo.php?sn= 鏈接
+          const videoLinks = document.querySelectorAll(
+            'a[href*="animeVideo.php?sn="]',
+          );
+          if (videoLinks && videoLinks.length > 0) {
+            const href = videoLinks[0].getAttribute('href') || '';
+            const linkMatch = href.match(/sn=(\d+)/);
+            if (linkMatch && linkMatch[1]) {
+              return linkMatch[1];
+            }
+          }
+
+          return '';
+        });
+
+        this.logger.log(`從參考頁面獲取 SN: ${SN}`);
+      } else {
+        // 直接從 URL 提取 SN
+        SN = this.strBetween(url, 'sn=', '"');
+        this.logger.log(`直接從 URL 獲取 SN: ${SN}`);
+      }
+
+      if (!SN) {
+        throw new Error('無法解析 SN');
+      }
+
+      return SN;
+    } catch (error) {
+      this.logger.error(`獲取 SN 失敗: ${error.message}`);
+      throw error;
+    }
+  }
+
   async parser(dto: GamerParserDto) {
     try {
-      const { sn } = dto;
+      const { url } = dto;
       let m3u8Url = null;
       let deviceId = '';
 
       // 初始化爬蟲服務
       await this.crawlerService.init();
+
+      // 從 URL 獲取 SN
+      this.logger.log(`解析 URL: ${url}`);
+      const sn = await this.getSNFromUrl(url);
+
+      if (!sn) {
+        throw new Error('無法從 URL 獲取 SN');
+      }
+
+      this.logger.log(`成功獲取 SN: ${sn}`);
 
       try {
         // 獲取 deviceid - 添加 useProxy: true
@@ -156,7 +228,7 @@ export class GamerService {
 
         // 4. 每隔 5 秒循環嘗試獲取 m3u8，總共 60 秒
         let retryCount = 0;
-        const maxRetries = 12; // 60 秒 / 5 秒 = 12 次
+        const maxRetries = 10; // 60 秒 / 5 秒 = 10 次
 
         while (!m3u8Url && retryCount < maxRetries) {
           // 每次循環都發送廣告結束請求 - 添加 useProxy: true

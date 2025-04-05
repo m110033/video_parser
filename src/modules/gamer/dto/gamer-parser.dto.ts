@@ -3,7 +3,7 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class GamerParserDto {
   @IsNotEmpty()
   @IsString()
-  sn: string;
+  url: string;
 
   @IsOptional()
   @IsString()
