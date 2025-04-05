@@ -166,6 +166,10 @@ export class GamerService {
 
       this.logger.log(`成功獲取 SN: ${sn}`);
 
+      // 構建標準視頻頁面 URL 作為 referer
+      const refererUrl = `https://ani.gamer.com.tw/animeVideo.php?sn=${sn}`;
+      this.logger.log(`使用參考頁面: ${refererUrl}`);
+
       try {
         // 獲取 deviceid - 添加 useProxy: true
         this.logger.log('獲取 deviceId');
@@ -210,7 +214,7 @@ export class GamerService {
 
         // 設定共用的請求頭
         const headers = {
-          referer: `https://ani.gamer.com.tw/animeVideo.php?sn=${sn}`,
+          referer: refererUrl,
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           Cookie: cookieString,
@@ -291,7 +295,9 @@ export class GamerService {
 
       return {
         success: true,
+        sn,
         m3u8Url,
+        referer: refererUrl, // 返回參考頁面 URL
       };
     } catch (error) {
       this.logger.error(`解析失敗: ${error.message}`, error.stack);

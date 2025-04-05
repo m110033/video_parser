@@ -202,7 +202,7 @@ export class CrawlerService {
           await this.page?.setExtraHTTPHeaders(params.headers);
         }
 
-        this.logger.log(`goto page: ${url} start`);
+        // this.logger.log(`goto page: ${url} start`);
 
         this.pageResponse = await this.page?.goto(url, {
           waitUntil: params?.waitUntil || 'domcontentloaded',
@@ -211,7 +211,7 @@ export class CrawlerService {
 
         isError = false;
 
-        this.logger.log(`goto page: ${url} end`);
+        // this.logger.log(`goto page: ${url} end`);
 
         break;
       } catch (err) {
