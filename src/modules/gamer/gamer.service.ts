@@ -99,10 +99,10 @@ export class GamerService {
 
       // 如果都無法獲取，使用預設值
       this.logger.warn('無法從 animeVideo.js 找到廣告 ID，使用預設值');
-      return '115237';
+      return '265849';
     } catch (error) {
       this.logger.error('獲取廣告 ID 時發生錯誤', error);
-      return '115237'; // 預設廣告 ID
+      return '265849'; // 預設廣告 ID
     }
   }
 
@@ -209,43 +209,17 @@ export class GamerService {
 
   async login(username: string, password: string) {
     try {
-      const task = await this.crawlerCaptchaSolverService.createTaskByCapSolver(
-        {
-          type: 'ReCaptchaV2TaskProxyLess',
-          websiteURL: 'https://user.gamer.com.tw/login.php',
-          websiteKey: '6Lcu1KAaAAAAABVXy4pHWruzjVBg5WxPq6EhLKkY',
-          isInvisible: false,
-        },
-      );
-
-      const result =
-        await this.crawlerCaptchaSolverService.getTaskResultByCapSolver(
-          task.taskId,
-        );
-
-      // 獲取 reCAPTCHA 令牌
-      const gRecaptchaResponse = result.solution.gRecaptchaResponse;
-
-      if (!gRecaptchaResponse) {
-        throw new Error('無法獲取 reCAPTCHA 令牌');
-      }
-
-      this.logger.log('成功獲取 reCAPTCHA 令牌');
-
-      // 使用 FormData 格式發送登入請求
-      const formData = new FormData();
-      formData.append('userid', username);
-      formData.append('password', password);
-      formData.append('autoLogin', 'T');
-      formData.append('g-recaptcha-response', gRecaptchaResponse);
-
       const response = await axios.post(
-        'https://user.gamer.com.tw/ajax/do_login.php',
-        formData,
+        this.loginUrl,
+        new URLSearchParams({
+          uid: username,
+          passwd: password,
+          vcode: '7045', // 驗證碼，可能需要動態獲取
+        }),
         {
           headers: {
             'User-Agent': this.userAgent,
-            'Content-Type': 'multipart/form-data',
+            Cookie: 'ckAPP_VCODE=7045',
           },
         },
       );
@@ -264,6 +238,63 @@ export class GamerService {
     }
   }
 
+  // async login(username: string, password: string) {
+  //   try {
+  //     const task = await this.crawlerCaptchaSolverService.createTaskByCapSolver(
+  //       {
+  //         type: 'ReCaptchaV2TaskProxyLess',
+  //         websiteURL: 'https://user.gamer.com.tw/login.php',
+  //         websiteKey: '6Lcu1KAaAAAAABVXy4pHWruzjVBg5WxPq6EhLKkY',
+  //         isInvisible: false,
+  //       },
+  //     );
+
+  //     const result =
+  //       await this.crawlerCaptchaSolverService.getTaskResultByCapSolver(
+  //         task.taskId,
+  //       );
+
+  //     // 獲取 reCAPTCHA 令牌
+  //     const gRecaptchaResponse = result.solution.gRecaptchaResponse;
+
+  //     if (!gRecaptchaResponse) {
+  //       throw new Error('無法獲取 reCAPTCHA 令牌');
+  //     }
+
+  //     this.logger.log('成功獲取 reCAPTCHA 令牌');
+
+  //     // 使用 FormData 格式發送登入請求
+  //     const formData = new FormData();
+  //     formData.append('userid', username);
+  //     formData.append('password', password);
+  //     formData.append('autoLogin', 'T');
+  //     formData.append('g-recaptcha-response', gRecaptchaResponse);
+
+  //     const response = await axios.post(
+  //       'https://user.gamer.com.tw/ajax/do_login.php',
+  //       formData,
+  //       {
+  //         headers: {
+  //           'User-Agent': this.userAgent,
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       },
+  //     );
+
+  //     const cookies = response.headers['set-cookie'];
+  //     if (!cookies) {
+  //       throw new Error('無法獲取 Cookies');
+  //     }
+  //     const bunchOfCookies = cookies.map((cookie) => {
+  //       const [name, value] = cookie.split(';')[0].split('=');
+  //       return { name, value };
+  //     });
+  //     return bunchOfCookies;
+  //   } catch (error) {
+  //     throw new Error(`登入失敗：${error.message}`);
+  //   }
+  // }
+
   /**
    * 獲取裝置 ID，支援使用 Puppeteer 或 Axios 兩種方式
    * @param usePuppeteer 是否使用 Puppeteer (預設為 true)
@@ -272,11 +303,15 @@ export class GamerService {
    */
   async getDeviceId(
     usePuppeteer: boolean = true,
+    previousDeviceId: string = '037d0804dfce2373f0eeba7cd8942f04a030570046db3be067eed7f79464',
     headers?: Record<string, string>,
-  ): Promise<string> {
+  ) {
+    let deviceId = '';
+    let animeSign = '';
+
     try {
-      const url =
-        'https://ani.gamer.com.tw/ajax/getdeviceid.php?id=00862888f34dc1a8af5fe4fe17c3f07ea1e89872fd235e5467ef52c59343';
+      const url = `https://ani.gamer.com.tw/ajax/getdeviceid.php?id=${previousDeviceId}`;
+
       this.logger.log(
         `使用${usePuppeteer ? 'Puppeteer' : 'Axios'}方式獲取 deviceId`,
       );
@@ -301,10 +336,18 @@ export class GamerService {
           }
         });
 
+        const cookies = await deviceIdPage.cookies();
+        const cookie = cookies.find((c) => c.name === 'ANIME_SIGN');
+        if (cookie) {
+          animeSign = cookie.value;
+          this.logger.log(`獲取到 ANIME_SIGN: ${animeSign}`);
+        } else {
+          throw new Error('無法獲取 ANIME_SIGN Cookie');
+        }
+
         if (deviceIdJson && deviceIdJson.deviceid) {
-          const deviceId = deviceIdJson.deviceid;
+          deviceId = deviceIdJson.deviceid;
           this.logger.log(`獲取到 deviceId: ${deviceId}`);
-          return deviceId;
         } else {
           throw new Error('無法從 Puppeteer 回應解析 deviceId');
         }
@@ -330,14 +373,22 @@ export class GamerService {
               : undefined,
         });
 
+        const animeSignCookie =
+          response.headers['set-cookie']?.find((cookie) =>
+            cookie.startsWith('ANIME_SIGN'),
+          ) || '';
+        animeSign = animeSignCookie.split(';')[0].split('=')[1];
+        this.logger.log(`獲取到 animeSign: ${animeSign}`);
+
         if (response.data && response.data.deviceid) {
-          const deviceId = response.data.deviceid;
+          deviceId = response.data.deviceid;
           this.logger.log(`獲取到 deviceId: ${deviceId}`);
-          return deviceId;
         } else {
           throw new Error('無法從 Axios 回應解析 deviceId');
         }
       }
+
+      return { deviceId, animeSign };
     } catch (error) {
       this.logger.error(`獲取 deviceId 失敗: ${error.message}`, error.stack);
       throw new Error(`獲取 deviceId 失敗: ${error.message}`);
@@ -361,7 +412,7 @@ export class GamerService {
         this.logger.log('嘗試登入獲取 BAHARUNE...');
         // 使用傳入的帳密或默認帳密
         const loginUsername = process.env.GAMER_USER || '';
-        const loginPassword = process.env.GAMER_PASWWORD || '';
+        const loginPassword = process.env.GAMER_PASSWORD || '';
 
         bunchCookies = await this.login(loginUsername, loginPassword);
         this.logger.log('登入成功，已獲取 bunchCookies');
@@ -369,36 +420,44 @@ export class GamerService {
         this.logger.warn(`登入失敗: ${loginError.message}，將以匿名模式繼續`);
       }
 
-      // 2. 從 URL 獲取 SN
       this.logger.log(`解析 URL: ${url}`);
       const sn = await this.getSNFromUrl(url, usePuppeteer);
-
       if (!sn) {
         throw new Error('無法從 URL 獲取 SN');
       }
-
       this.logger.log(`成功獲取 SN: ${sn}`);
 
-      // 3. 構建標準視頻頁面 URL 作為 referer
       const refererUrl = `https://ani.gamer.com.tw/animeVideo.php?sn=${sn}`;
       this.logger.log(`使用參考頁面: ${refererUrl}`);
 
+      const adId = await this.getAdId(false);
+      this.logger.log(`使用廣告 ID: ${adId}`);
+
+      const deviceInfo = await this.getDeviceId(usePuppeteer);
+      deviceId = deviceInfo.deviceId;
+
+      const selectedCookie = bunchCookies.filter((c) => c.name === 'BAHARUNE');
+
+      const anineSingCookie = {
+        name: 'ANIME_SIGN',
+        value: deviceInfo.animeSign,
+      };
+
+      selectedCookie.push(anineSingCookie);
+
       const headers = {
-        referer: refererUrl,
+        // referer: refererUrl,
         'User-Agent': this.userAgent,
-        Cookie: bunchCookies
+        // Accept: '*/*',
+        // 'Accept-Encoding': 'gzip, deflate, br, zstd',
+        // 'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        // Host: 'ani.gamer.com.tw',
+        Cookie: selectedCookie
           .map((cookie) => `${cookie.name}=${cookie.value}`)
           .join('; '),
       };
 
       this.logger.log(`請求頭: ${JSON.stringify(headers)}`);
-
-      this.logger.log('獲取 deviceId');
-
-      deviceId = await this.getDeviceId(usePuppeteer, headers);
-
-      const adId = await this.getAdId(usePuppeteer);
-      this.logger.log(`使用廣告 ID: ${adId}`);
 
       await this.crawlerService.request({
         url: `https://ani.gamer.com.tw/ajax/videoCastcishu.php?s=${adId}&sn=${sn}`,
@@ -428,6 +487,33 @@ export class GamerService {
             usePuppeteer,
           });
 
+          if (m3u8Json.error) {
+            const code = m3u8Json.error.code;
+            this.logger.log(
+              `獲取 m3u8 錯誤: ${JSON.stringify(m3u8Json.error)}`,
+            );
+            if (code === 1007) {
+              await this.unLockDeviceIdAndSn(
+                deviceId,
+                sn,
+                headers,
+                true,
+                usePuppeteer,
+              );
+              const deviceInfo = await this.getDeviceId(
+                usePuppeteer,
+                deviceId,
+                headers,
+              );
+              deviceId = deviceInfo.deviceId;
+              anineSingCookie.value = deviceInfo.animeSign;
+              headers.Cookie = selectedCookie
+                .map((cookie) => `${cookie.name}=${cookie.value}`)
+                .join('; ');
+            }
+            continue;
+          }
+
           this.logger.log(
             `第 ${retryCount + 1} 次獲取 m3u8 回應: ${JSON.stringify(m3u8Json)}`,
           );
@@ -440,18 +526,9 @@ export class GamerService {
             this.logger.debug(`m3u8 未就緒`);
           }
         } catch (error) {
-          this.logger.error(`獲取 m3u8 失敗: ${error.response?.data?.error}`);
-          const code = error.response?.data?.error?.code;
-          if (code === 1007) {
-            await this.unLockDeviceIdAndSn(
-              deviceId,
-              sn,
-              headers,
-              true,
-              usePuppeteer,
-            );
-            deviceId = await this.getDeviceId(usePuppeteer, headers);
-          }
+          this.logger.error(
+            `獲取 m3u8 失敗: ${JSON.stringify(error.response?.data?.error)}`,
+          );
           this.logger.debug(`重試中 ${retryCount + 1}/${maxRetries}...`);
         }
 
