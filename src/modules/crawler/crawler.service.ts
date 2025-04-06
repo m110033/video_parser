@@ -11,6 +11,7 @@ import {
 import { lastValueFrom } from 'rxjs';
 import * as chromium from 'chromium';
 import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 @Injectable()
 export class CrawlerService {
@@ -79,31 +80,24 @@ export class CrawlerService {
   }
 
   async resetBrowser() {
-    // 關閉瀏覽器
-    try {
-      await this.browser?.close();
-    } catch (err) {
-      this.logger.error(`close browser error: ${err.message}`);
+    if (this.browser) {
+      return;
     }
 
     try {
-      // 基本啟動參數
-      const launchArgs = [
-        '--disable-gpu',
-        '--disable-setuid-sandbox',
-        '--no-sandbox',
-        '--no-zygote',
-        '--disable-dev-shm-usage',
-      ];
-
       // 如果有設置代理，添加代理參數
       if (this.proxyServer) {
-        launchArgs.push(`--proxy-server=${this.proxyServer}`);
+        // launchArgs.push(`--proxy-server=${this.proxyServer}`);
         this.logger.log(`Using proxy: ${this.proxyServer}`);
       }
 
-      this.browser = await puppeteer.use(StealthPlugin()).launch({
-        args: launchArgs,
+      this.browser = await puppeteer.launch({
+        args: [
+          '--disable-gpu',
+          '--disable-setuid-sandbox',
+          '--no-sandbox',
+          '--no-zygote',
+        ],
         headless: true,
         acceptInsecureCerts: true,
         executablePath: chromium.path,
@@ -143,15 +137,21 @@ export class CrawlerService {
     }
 
     try {
-      const pages = await this.browser.pages();
+      // const pages = await this.browser.pages();
 
-      // 關閉所有頁面
-      for (const page of pages) {
-        await page.close();
+      // // 關閉所有頁面
+      // for (const page of pages) {
+      //   await page.close();
+      // }
+
+      // // 重建主頁面
+      // this.page = await this.browser.newPage();
+
+      this.page = await this.browser.pages()[0];
+
+      if (!this.page) {
+        this.page = await this.browser.newPage();
       }
-
-      // 重建主頁面
-      this.page = await this.browser.newPage();
 
       // 如果需要代理身份驗證
       if (this.proxyServer) {
@@ -161,6 +161,98 @@ export class CrawlerService {
       this.logger.log('browser pages are created.');
     } catch (err) {
       this.logger.error(`browser pages creation error: ${err.message}`);
+    }
+  }
+
+  /**
+   * 通用請求函數，支持 puppeteer 和 axios
+   * @param url 請求的 URL
+   * @param options 請求選項
+   * @returns 請求結果，puppeteer 返回 Page 或 JSON，axios 返回回應數據
+   */
+  async request<T = any>({
+    url,
+    headers,
+    method = 'GET',
+    useProxy = process.env.IS_PROXY_ENABLED === 'true',
+    waitUntil = 'networkidle2',
+    usePuppeteer = true, // 是否使用 puppeteer 而不是 axios
+    data = null, // POST 請求的數據
+  }: {
+    url: string;
+    headers?: Record<string, string>;
+    method?: 'GET' | 'POST';
+    useProxy?: boolean;
+    waitUntil?: PuppeteerLifeCycleEvent;
+    usePuppeteer?: boolean;
+    data?: any;
+  }): Promise<T | Page | null> {
+    try {
+      // 使用 Puppeteer 方式
+      if (usePuppeteer) {
+        const page = await this.fetchUrl(url, {
+          headers,
+          waitUntil,
+          useProxy,
+        });
+
+        if (!page) {
+          return null;
+        }
+
+        const jsonData = await page.evaluate(() => {
+          try {
+            return JSON.parse(document.body.textContent?.trim() || '{}');
+          } catch (e) {
+            return null;
+          }
+        });
+
+        return jsonData as T;
+      }
+      // 使用 Axios 方式
+      else {
+        // 設置 axios 配置
+        const config: any = {
+          headers,
+          proxy: undefined,
+        };
+
+        // 如果需要代理
+        if (useProxy && this.proxyServer) {
+          const proxyServerInfo = this.proxyServer.split(':');
+          config.proxy = {
+            host: proxyServerInfo[0],
+            port: parseInt(proxyServerInfo[1] || '80'),
+          };
+
+          // 如果有用戶名密碼
+          const proxyUsername =
+            this.configService.get<string>('PROXY_USERNAME');
+          const proxyPassword =
+            this.configService.get<string>('PROXY_PASSWORD');
+
+          if (proxyUsername && proxyPassword) {
+            config.proxy.auth = {
+              username: proxyUsername,
+              password: proxyPassword,
+            };
+          }
+        }
+
+        // 發送請求
+        let response;
+        if (method === 'POST') {
+          response = await axios.post(url, data, config);
+        } else {
+          response = await axios.get(url, config);
+        }
+
+        return response.data as T;
+      }
+    } catch (error) {
+      this.logger.error(`請求失敗 [${url}]: ${error.message}`);
+      throw error;
     }
   }
 
@@ -228,68 +320,6 @@ export class CrawlerService {
     }
 
     return this.page;
-  }
-
-  async request(obj: {
-    url: string;
-    method: 'GET' | 'POST';
-    data: any;
-    headers?: any;
-    useProxy?: boolean; // 新增參數：是否使用代理
-  }) {
-    try {
-      const { url, method, data, headers, useProxy } = obj;
-
-      // 添加代理配置到 HTTP 請求
-      const config: any = { headers };
-
-      // 根據參數決定是否使用代理
-      if (useProxy !== false && this.proxyServer) {
-        const proxyServer = this.proxyServer;
-
-        if (proxyServer) {
-          // 適用於 http:// 或 https:// 開頭的代理
-          if (proxyServer.startsWith('http')) {
-            config.proxy = {
-              protocol: proxyServer.split('://')[0],
-              host: proxyServer.split('://')[1].split(':')[0],
-              port: parseInt(proxyServer.split(':').pop() || '80'),
-            };
-          }
-          // 適用於僅包含 host:port 的代理
-          else if (proxyServer.includes(':')) {
-            config.proxy = {
-              host: proxyServer.split(':')[0],
-              port: parseInt(proxyServer.split(':')[1]),
-            };
-          }
-
-          // 如果有用戶名密碼
-          const proxyUsername =
-            this.configService.get<string>('PROXY_USERNAME');
-          const proxyPassword =
-            this.configService.get<string>('PROXY_PASSWORD');
-
-          if (proxyUsername && proxyPassword) {
-            config.proxy.auth = {
-              username: proxyUsername,
-              password: proxyPassword,
-            };
-          }
-        }
-      }
-
-      const response = await lastValueFrom(
-        method === 'POST'
-          ? this.httpService.post(url, data, config)
-          : this.httpService.get(url, config),
-      );
-
-      return response.data;
-    } catch (err) {
-      this.logger.error(`httpService 取得頁面資訊失敗: ${err.message}`);
-      throw err;
-    }
   }
 
   getPage() {

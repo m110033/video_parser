@@ -62,6 +62,9 @@ importers:
       puppeteer-extra-plugin-stealth:
         specifier: ^2.11.2
         version: 2.11.2(puppeteer-extra@3.3.6(puppeteer-core@24.6.0)(puppeteer@24.6.0(typescript@5.8.2)))
+      random-useragent:
+        specifier: ^0.5.0
+        version: 0.5.0
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -2697,6 +2700,9 @@ packages:
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
 
+  json-stringify-safe@5.0.1:
+    resolution: {integrity: sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==}
+
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
@@ -3260,6 +3266,13 @@ packages:
   quick-lru@5.1.1:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
     engines: {node: '>=10'}
+
+  random-seed@0.3.0:
+    resolution: {integrity: sha512-y13xtn3kcTlLub3HKWXxJNeC2qK4mB59evwZ5EkeRlolx+Bp2ztF7LbcZmyCnOqlHQrLnfuNbi1sVmm9lPDlDA==}
+    engines: {node: '>= 0.6.0'}
+
+  random-useragent@0.5.0:
+    resolution: {integrity: sha512-FUMkqVdZeoSff5tErNL3FFGYXElDWZ1bEuedhm5u9MdCFwANriJWbHvDRYrLTOzp/fBsBGu5J1cWtDgifa97aQ==}
 
   randombytes@2.1.0:
     resolution: {integrity: sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==}
@@ -7005,6 +7018,8 @@ snapshots:
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
+  json-stringify-safe@5.0.1: {}
+
   json5@2.2.3: {}
 
   jsonc-parser@3.3.1: {}
@@ -7512,6 +7527,14 @@ snapshots:
   queue-microtask@1.2.3: {}
 
   quick-lru@5.1.1: {}
+
+  random-seed@0.3.0:
+    dependencies:
+      json-stringify-safe: 5.0.1
+
+  random-useragent@0.5.0:
+    dependencies:
+      random-seed: 0.3.0
 
   randombytes@2.1.0:
     dependencies:

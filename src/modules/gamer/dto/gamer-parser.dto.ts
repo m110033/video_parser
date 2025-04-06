@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class GamerParserDto {
   @IsNotEmpty()
   @IsString()
   url: string;
 
+  @IsBoolean()
   @IsOptional()
-  @IsString()
-  adId?: string;
+  usePuppeteer?: boolean = true;
 }
