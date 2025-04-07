@@ -40,9 +40,4 @@ export class KeepAliveService {
       this.logger.error(`保活任務失敗: ${error.message}`);
     }
   }
-
-  // 在應用啟動時也執行一次
-  async onApplicationBootstrap() {
-    await this.keepAlive();
-  }
 }

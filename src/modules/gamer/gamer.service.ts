@@ -7,23 +7,15 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import dayjs from 'dayjs';
 import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
-import { CrawlerCaptchaSolverService } from '../crawler/crawler-captcha-solver.service';
 
 @Injectable()
 export class GamerService {
   private readonly logger = new Logger(GamerService.name);
 
-  private readonly loginUrl =
-    'https://api.gamer.com.tw/mobile_app/user/v3/do_login.php';
-
-  private readonly userAgent =
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
-
   constructor(
     private readonly crawlerService: CrawlerService,
     private readonly configService: ConfigService,
-    private readonly crawlerCaptchaSolverService: CrawlerCaptchaSolverService,
-  ) { }
+  ) {}
 
   // 從字串中擷取兩個字符間的內容
   private strBetween(str: string, start: string, end: string): string {
@@ -194,11 +186,6 @@ export class GamerService {
         error: error.message || '發生錯誤',
       };
     }
-  }
-
-  @Cron(dayjs().add(10, 's').toDate())
-  async startupCrawlGamer() {
-    return await this.crawlGamer(false);
   }
 
   getGamerJsonPath(debugMode: boolean = false): string {

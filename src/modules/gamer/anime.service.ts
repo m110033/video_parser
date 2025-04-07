@@ -88,21 +88,19 @@ export class AnimeService {
         await this.login(process.env.GAMER_USER || '', process.env.GAMER_PASSWORD || '');
 
         await this.reGenDeviceId();
+        this.logger.log(`嘗試獲取設備 ID: ${this.deviceId}`);
         const sn = await this.getSNFromUrl(url);
-        this.logger.log(`[${sn}] 嘗試獲取設備 ID: ${this.deviceId}`);
+        this.logger.log(`取得 SN: ${sn}`);
         const userInfo = await this.gainAccess(sn);
-        this.logger.log(`[${sn}] 獲取用戶資訊: ${JSON.stringify(userInfo)}`);
+        this.logger.log(`獲取用戶資訊: ${JSON.stringify(userInfo)}`);
         ret = await this.unlock(sn);
-        this.logger.log(`[${sn}] 解鎖結果: ${JSON.stringify(ret)}`);
+        this.logger.log(`解鎖結果: ${JSON.stringify(ret)}`);
         ret = await this.checkLock(sn);
-        this.logger.log(`[${sn}] 鎖定結果: ${JSON.stringify(ret)}`);
-        ret = await this.unlock(sn);
-        this.logger.log(`[${sn}] 解鎖結果: ${JSON.stringify(ret)}`);
-        ret = await this.unlock(sn);
-        this.logger.log(`[${sn}] 解鎖結果: ${JSON.stringify(ret)}`);
+        this.logger.log(`鎖定結果: ${JSON.stringify(ret)}`);
 
-
-        let m3u8List;
+        
+        const refererUrl = `https://ani.gamer.com.tw/animeVideo.php?sn=${sn}`;
+        let m3u8Url = '';
 
         if (!userInfo.vip) {
             await this.startAd(sn);
@@ -113,19 +111,24 @@ export class AnimeService {
                 await this.checkNoAd(sn);
                 const playlist = await this.getPlaylist(sn);
                 if (playlist.src !== '') {
-                    m3u8List = playlist.src;
+                    m3u8Url = playlist.src;
                 } else if (playlist.error && playlist.error.code === 1007) {
                     await this.unlock(sn);
                     await this.reGenDeviceId();
                 }
             } catch (error) {
-                this.logger.error(`[${sn}] 廣告跳過失敗: ${error.message}`);
+                this.logger.error(`廣告跳過失敗: ${error.message}`);
             }
         } else {
-            this.logger.log(`[${sn}] VIP帳戶，立即下載`);
+            this.logger.log(`VIP帳戶, 立即下載`);
         }
 
-        return m3u8List;
+        return {
+            success: true,
+            sn,
+            m3u8Url,
+            referer: refererUrl,
+        };
     }
 
     async login(username: string, password: string) {
@@ -207,7 +210,7 @@ export class AnimeService {
     private async videoStart(sn: string): Promise<void> {
         const url = `https://ani.gamer.com.tw/ajax/videoStart.php?sn=${sn}`;
         const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
-        this.logger.log(`[${sn}] 開始播放: ${JSON.stringify(res.data)}`);
+        this.logger.log(`開始播放: ${JSON.stringify(res.data)}`);
     }
 
     private async checkNoAd(sn: string, errorCount = 10): Promise<void> {
@@ -215,7 +218,7 @@ export class AnimeService {
         const url = `https://ani.gamer.com.tw/ajax/token.php?sn=${sn}&device=${this.deviceId}&hash=${hash}`;
         const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
         const data = res.data;
-        this.logger.log(`[${sn}] 廣告檢查: ${JSON.stringify(data)}`);
+        this.logger.log(`廣告檢查: ${JSON.stringify(data)}`);
     }
 
     private async getPlaylist(sn: string) {

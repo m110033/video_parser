@@ -8,8 +8,4 @@ export class GamerParserDto {
   @IsOptional()
   @IsString()
   sn: string;
-
-  @IsBoolean()
-  @IsOptional()
-  usePuppeteer?: boolean = true;
 }
