@@ -102,7 +102,7 @@ export class AnimeService {
     let userInfo = await this.gainAccess(sn);
     this.logger.log(`用戶資訊: ${JSON.stringify(userInfo)}`);
 
-    if (userInfo?.error.code === 1007) {
+    if (userInfo?.error && userInfo?.error?.code === 1007) {
       this.logger.log(`嘗試登入...`);
 
       await this.login(
