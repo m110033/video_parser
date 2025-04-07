@@ -20,7 +20,15 @@ import { AnimeService } from './anime.service';
 export class GamerController {
   private readonly logger = new Logger(GamerController.name);
 
-  constructor(private readonly gamerService: GamerService, private readonly animeService: AnimeService) { }
+  constructor(
+    private readonly gamerService: GamerService,
+    private readonly animeService: AnimeService,
+  ) {}
+
+  @Get('proxy-test')
+  async testProxy() {
+    return await this.animeService.testProxy();
+  }
 
   @Post('gamer')
   async create(@Body() dto: GamerParserDto) {

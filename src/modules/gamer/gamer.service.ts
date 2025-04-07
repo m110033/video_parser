@@ -1,20 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CrawlerService } from '../crawler/crawler.service';
+import { HttpService } from '@nestjs/axios';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import dayjs from 'dayjs';
 import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
+import { lastValueFrom } from 'rxjs';
+import axios from 'axios';
+import { CrawlerService } from '../crawler/crawler.service';
 
 @Injectable()
 export class GamerService {
   private readonly logger = new Logger(GamerService.name);
+  private readonly userAgent =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 
   constructor(
-    private readonly crawlerService: CrawlerService,
     private readonly configService: ConfigService,
+    private readonly crawlerService: CrawlerService,
   ) {}
 
   // 從字串中擷取兩個字符間的內容
@@ -31,6 +35,24 @@ export class GamerService {
   }
 
   /**
+   * 使用 HttpService 獲取頁面內容
+   * @param url 請求的 URL
+   * @param headers 請求頭
+   * @returns 頁面 HTML 內容
+   */
+  private async fetchHtml(
+    url: string,
+    headers?: Record<string, string>,
+  ): Promise<string> {
+    try {
+      return await this.crawlerService.request({ url, headers });
+    } catch (error) {
+      this.logger.error(`獲取頁面內容失敗 [${url}]: ${error.message}`);
+      throw new Error(`獲取頁面內容失敗: ${error.message}`);
+    }
+  }
+
+  /**
    * 爬取動畫瘋的動畫列表並保存為 JSON 檔案
    * @param debugMode 是否為除錯模式
    * @returns 爬取到的動畫列表數據
@@ -39,9 +61,6 @@ export class GamerService {
   async crawlGamer(debugMode: boolean = false): Promise<any> {
     try {
       this.logger.log('開始爬取動畫瘋動畫列表...');
-
-      // 初始化爬蟲服務
-      await this.crawlerService.init();
 
       // 確定存儲目錄
       const curDirectory = debugMode ? 'debug' : 'store';
@@ -57,20 +76,16 @@ export class GamerService {
 
       // 獲取總頁數
       const videoUrl = 'https://ani.gamer.com.tw/animeList.php?page=1&c=0';
-      const page = await this.crawlerService.fetchUrl(videoUrl);
+      const html = await this.fetchHtml(videoUrl);
 
-      if (!page) {
-        throw new Error('無法獲取動畫瘋首頁');
-      }
-
-      const html = await page.content();
       const pageNumStr = this.strBetween(
         html,
         '<div class="page_number">',
         '/div>',
       ).trim();
+
       const pageNum = parseInt(
-        this.strBetween(pageNumStr, '...<a href="?page=', '&').trim(),
+        this.strBetween(pageNumStr, "...<a href='?page=", '&').trim(),
       );
 
       // 限制最多爬取 15 頁
@@ -95,14 +110,8 @@ export class GamerService {
         this.logger.debug(`正在解析第 ${pageIndex}/${pagesToCrawl} 頁`);
 
         const pageUrl = `https://ani.gamer.com.tw/animeList.php?page=${pageIndex}&c=0`;
-        const pageResponse = await this.crawlerService.fetchUrl(pageUrl);
+        const pageHtml = await this.fetchHtml(pageUrl);
 
-        if (!pageResponse) {
-          this.logger.error(`無法獲取第 ${pageIndex} 頁`);
-          continue;
-        }
-
-        const pageHtml = await pageResponse.content();
         const $ = cheerio.load(pageHtml.replace('</i>', ''));
 
         // 解析頁面中的每個動畫項目

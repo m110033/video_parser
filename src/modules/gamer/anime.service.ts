@@ -271,4 +271,18 @@ export class AnimeService {
     }
     return result;
   }
+
+  async testProxy() {
+    const response = await firstValueFrom(
+      this.httpService.get('http://api.ipify.org', {
+        timeout: 10000,
+        headers: { 'User-Agent': this.userAgent },
+      }),
+    );
+    this.logger.log(`代理測試成功, IP: ${response.data}`);
+    return {
+      success: true,
+      ip: response.data,
+    };
+  }
 }
