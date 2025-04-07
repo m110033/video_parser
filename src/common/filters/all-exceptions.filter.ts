@@ -5,6 +5,7 @@ import {
   HttpStatus,
   NotFoundException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 
 type ResponseBody = {
@@ -21,6 +22,8 @@ type ExceptionResponse = {
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
+
   catch(exception: Error, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<any>();
 
@@ -46,6 +49,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       responseObj.body.message = 'unknown error';
       responseObj.body.error = exception.message;
     }
+
+    this.logger.error(
+      `Exception: ${exception.message}, Stack: ${exception.stack}`,
+      exception.stack,
+    );
 
     return response.status(responseObj.status).json({
       ...responseObj.body,
