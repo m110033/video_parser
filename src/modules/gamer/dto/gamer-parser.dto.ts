@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class GamerParserDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   url: string;
 
   @IsOptional()
   @IsString()
-  adId?: string;
+  sn: string;
 }

@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { GamerController } from './gamer.controller';
 import { GamerService } from './gamer.service';
 import { CrawlerModule } from '../crawler/crawler.module';
+import { AnimeService } from './anime.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [CrawlerModule],
+  imports: [HttpModule.register({ timeout: 5000 }), CrawlerModule],
   controllers: [GamerController],
-  providers: [GamerService],
+  providers: [GamerService, AnimeService],
 })
 export class GamerModule {}

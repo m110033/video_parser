@@ -18,4 +18,4 @@ import { SystemModule } from './modules/system/system.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
