@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
-import { lastValueFrom } from 'rxjs';
-import axios from 'axios';
-import { CrawlerService } from '../crawler/crawler.service';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class GamerService {
@@ -18,7 +16,7 @@ export class GamerService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly crawlerService: CrawlerService,
+    private readonly httpService: HttpService,
   ) {}
 
   // 從字串中擷取兩個字符間的內容
@@ -45,7 +43,10 @@ export class GamerService {
     headers?: Record<string, string>,
   ): Promise<string> {
     try {
-      return await this.crawlerService.request({ url, headers });
+      const response = await firstValueFrom(
+        this.httpService.get(url, { headers }),
+      );
+      return response.data;
     } catch (error) {
       this.logger.error(`獲取頁面內容失敗 [${url}]: ${error.message}`);
       throw new Error(`獲取頁面內容失敗: ${error.message}`);
