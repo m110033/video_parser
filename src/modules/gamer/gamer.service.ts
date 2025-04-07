@@ -7,6 +7,9 @@ import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import https from 'https';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import axios from 'axios';
 
 @Injectable()
 export class GamerService {
@@ -43,11 +46,7 @@ export class GamerService {
     headers?: Record<string, string>,
   ): Promise<string> {
     try {
-      const response = await firstValueFrom(
-        this.httpService.get(url, {
-          headers,
-        }),
-      );
+      const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
     } catch (error) {
       this.logger.error(`獲取頁面內容失敗 [${url}]: ${error.message}`);

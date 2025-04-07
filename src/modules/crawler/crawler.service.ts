@@ -1,17 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
 import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import {
   Browser,
   HTTPResponse,
   Page,
   PuppeteerLifeCycleEvent,
 } from 'puppeteer';
-import { lastValueFrom } from 'rxjs';
 import * as chromium from 'chromium';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
 
 @Injectable()
 export class CrawlerService {
@@ -23,7 +18,7 @@ export class CrawlerService {
 
   private pageResponse?: HTTPResponse | null;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor() {}
 
   async init() {
     return await this.resetBrowser();
@@ -73,59 +68,6 @@ export class CrawlerService {
       this.logger.log('browser pages are created.');
     } catch (err) {
       this.logger.error(`browser pages creation error: ${err.message}`);
-    }
-  }
-
-  async request({
-    url,
-    headers,
-    method = 'GET',
-    data = null,
-  }: {
-    url: string;
-    headers?: Record<string, string>;
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-    data?: any;
-  }) {
-    try {
-      // 設置請求配置
-      const config: any = {
-        headers: headers || {},
-      };
-
-      // 發送請求
-      let response;
-      switch (method) {
-        case 'POST':
-          response = await lastValueFrom(
-            this.httpService.post(url, data, config),
-          );
-          break;
-        case 'PUT':
-          response = await lastValueFrom(
-            this.httpService.put(url, data, config),
-          );
-          break;
-        case 'DELETE':
-          response = await lastValueFrom(this.httpService.delete(url, config));
-          break;
-        default: // GET
-          response = await lastValueFrom(this.httpService.get(url, config));
-          break;
-      }
-
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        this.logger.warn(
-          `請求返回錯誤狀態碼 ${error.response.status}: ${url}`,
-          error.response.data,
-        );
-        return error.response.data;
-      }
-
-      this.logger.error(`請求失敗 [${url}]: ${error.message}`, error.stack);
-      throw error;
     }
   }
 

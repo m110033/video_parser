@@ -94,23 +94,29 @@ export class AnimeService {
 
     let ret = {};
 
-    this.logger.log(`嘗試登入...`);
-
-    await this.login(
-      process.env.GAMER_USER || '',
-      process.env.GAMER_PASSWORD || '',
-    );
-
-    this.logger.log(`嘗試獲取設備 ID...`);
-    await this.reGenDeviceId();
-    this.logger.log(`設備 ID: ${this.deviceId}`);
-
     this.logger.log(`嘗試獲取 SN...`);
     const sn = await this.getSNFromUrl(url);
     this.logger.log(`取得 SN: ${sn}`);
 
     this.logger.log(`獲取用戶資訊...`);
-    const userInfo = await this.gainAccess(sn);
+    let userInfo = await this.gainAccess(sn);
+    this.logger.log(`用戶資訊: ${JSON.stringify(userInfo)}`);
+
+    if (userInfo?.error.code === 1007) {
+      this.logger.log(`嘗試登入...`);
+
+      await this.login(
+        process.env.GAMER_USER || '',
+        process.env.GAMER_PASSWORD || '',
+      );
+    }
+
+    this.logger.log(`嘗試獲取設備 ID...`);
+    await this.reGenDeviceId();
+    this.logger.log(`設備 ID: ${this.deviceId}`);
+
+    this.logger.log(`獲取用戶資訊...`);
+    userInfo = await this.gainAccess(sn);
     this.logger.log(`用戶資訊: ${JSON.stringify(userInfo)}`);
 
     ret = await this.unlock(sn);
