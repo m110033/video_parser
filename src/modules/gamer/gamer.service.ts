@@ -44,7 +44,9 @@ export class GamerService {
   ): Promise<string> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(url, { headers }),
+        this.httpService.get(url, {
+          headers,
+        }),
       );
       return response.data;
     } catch (error) {
