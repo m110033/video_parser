@@ -14,17 +14,18 @@ import { GamerParserDto } from './dto/gamer-parser.dto';
 import { createReadStream, existsSync } from 'fs';
 import * as fs from 'fs';
 import { Response } from 'express';
+import { AnimeService } from './anime.service';
 
 @Controller('parser')
 export class GamerController {
   private readonly logger = new Logger(GamerController.name);
 
-  constructor(private readonly gamerService: GamerService) {}
+  constructor(private readonly gamerService: GamerService, private readonly animeService: AnimeService) { }
 
   @Post('gamer')
   async create(@Body() dto: GamerParserDto) {
     // 處理 POST 請求的邏輯
-    return this.gamerService.parser(dto);
+    return this.animeService.getM3U8Dict(dto);
   }
 
   @Get('gamer/list')

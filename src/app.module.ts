@@ -13,9 +13,9 @@ import { SystemModule } from './modules/system/system.module';
     }),
     ScheduleModule.forRoot(),
     GamerModule,
-    // SystemModule,
+    SystemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
