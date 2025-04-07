@@ -21,7 +21,11 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
           const password = configService.get<string>('PROXY_PASSWORD');
           const proxyUrl = `http://${username}:${password}@${host}:${port}`;
           const httpsAgent = new HttpsProxyAgent(proxyUrl);
-          return { httpsAgent };
+          return {
+            httpsAgent,
+            timeout: 20000,
+            maxRedirects: 5,
+          };
         }
 
         return {};
