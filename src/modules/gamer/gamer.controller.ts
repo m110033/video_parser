@@ -18,7 +18,7 @@ import { AnimeService } from './anime.service';
 import { BaseController } from 'src/common/controller/base.controller';
 import { Site } from 'src/common/enums/site.enum';
 
-@Controller('parser')
+@Controller('gamer')
 export class GamerController extends BaseController {
   private readonly logger = new Logger(GamerController.name);
 
@@ -29,18 +29,17 @@ export class GamerController extends BaseController {
     super();
   }
 
-  @Get('proxy-test')
   async testProxy() {
     return await this.animeService.testProxy();
   }
 
-  @Post('gamer')
+  @Post('parser')
   async create(@Body() dto: GamerParserDto) {
     // 處理 POST 請求的邏輯
     return this.animeService.getM3U8Dict(dto);
   }
 
-  @Get('gamer/list')
+  @Get('list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
   downloadGamerList(@Res({ passthrough: true }) res: Response, @Query('debug') debug?: string) {

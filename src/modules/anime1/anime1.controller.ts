@@ -17,7 +17,7 @@ import { Anime1ParserDto } from './dto/Anime1-parser.dto';
 import { BaseController } from 'src/common/controller/base.controller';
 import { Site } from 'src/common/enums/site.enum';
 
-@Controller('parser')
+@Controller('anime1')
 export class Anime1Controller extends BaseController {
   private readonly logger = new Logger(Anime1Controller.name);
 
@@ -25,12 +25,12 @@ export class Anime1Controller extends BaseController {
     super();
   }
 
-  @Post('anime1')
+  @Post('parser')
   create(@Body() dto: Anime1ParserDto) {
     return this.anime1Service.getM3U8Dict(dto);
   }
 
-  @Get('anime1/list')
+  @Get('list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
   downloadList(@Res({ passthrough: true }) res: Response, @Query('debug') debug?: string) {
