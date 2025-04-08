@@ -15,15 +15,19 @@ import { createReadStream, existsSync } from 'fs';
 import * as fs from 'fs';
 import { Response } from 'express';
 import { AnimeService } from './anime.service';
+import { BaseController } from 'src/common/controller/base.controller';
+import { Site } from 'src/common/enums/site.enum';
 
 @Controller('parser')
-export class GamerController {
+export class GamerController extends BaseController {
   private readonly logger = new Logger(GamerController.name);
 
   constructor(
     private readonly gamerService: GamerService,
     private readonly animeService: AnimeService,
-  ) {}
+  ) {
+    super();
+  }
 
   @Get('proxy-test')
   async testProxy() {
@@ -39,21 +43,12 @@ export class GamerController {
   @Get('gamer/list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
-  async downloadGamerList(
-    @Res({ passthrough: true }) res: Response,
-    @Query('debug') debug?: string,
-  ) {
-    const debugMode = debug === 'true';
-    const filePath = this.gamerService.getGamerJsonPath(debugMode);
+  downloadGamerList(@Res({ passthrough: true }) res: Response, @Query('debug') debug?: string) {
+    const filePath = this.getGamerJsonPath(Site.GAMER);
 
     try {
       if (!existsSync(filePath)) {
-        this.logger.warn(`檔案不存在: ${filePath}，嘗試爬取...`);
-        await this.gamerService.crawlGamer(debugMode);
-
-        if (!existsSync(filePath)) {
-          throw new Error('無法生成 JSON 檔案');
-        }
+        throw new Error('無法生成 JSON 檔案');
       }
 
       const stats = fs.statSync(filePath);

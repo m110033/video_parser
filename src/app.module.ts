@@ -5,6 +5,7 @@ import { GamerModule } from './modules/gamer/gamer.module';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SystemModule } from './modules/system/system.module';
+import { Anime1Module } from './modules/anime1/anime1.module';
 
 @Module({
   imports: [
@@ -13,9 +14,10 @@ import { SystemModule } from './modules/system/system.module';
     }),
     ScheduleModule.forRoot(),
     GamerModule,
+    Anime1Module,
     SystemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

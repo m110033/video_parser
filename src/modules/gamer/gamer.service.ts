@@ -7,12 +7,10 @@ import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import https from 'https';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import axios from 'axios';
+import { BaseService } from 'src/common/services/base.service';
 
 @Injectable()
-export class GamerService {
+export class GamerService extends BaseService {
   private readonly logger = new Logger(GamerService.name);
   private readonly userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
@@ -20,19 +18,8 @@ export class GamerService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-  ) {}
-
-  // 從字串中擷取兩個字符間的內容
-  private strBetween(str: string, start: string, end: string): string {
-    const startIndex = str.indexOf(start);
-    if (startIndex === -1) return '';
-
-    const startPosWithOffset = startIndex + start.length;
-    const endIndex = str.indexOf(end, startPosWithOffset);
-
-    if (endIndex === -1) return '';
-
-    return str.substring(startPosWithOffset, endIndex);
+  ) {
+    super();
   }
 
   /**
@@ -41,10 +28,7 @@ export class GamerService {
    * @param headers 請求頭
    * @returns 頁面 HTML 內容
    */
-  private async fetchHtml(
-    url: string,
-    headers?: Record<string, string>,
-  ): Promise<string> {
+  private async fetchHtml(url: string, headers?: Record<string, string>): Promise<string> {
     try {
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -60,15 +44,12 @@ export class GamerService {
    * @returns 爬取到的動畫列表數據
    */
   @Cron(CronExpression.EVERY_HOUR)
-  async crawlGamer(debugMode: boolean = false): Promise<any> {
+  async crawlGamer(): Promise<any> {
     try {
       this.logger.log('開始爬取動畫瘋動畫列表...');
 
-      // 確定存儲目錄
-      const curDirectory = debugMode ? 'debug' : 'store';
-      const topDir = path.join(process.cwd(), curDirectory, 'gamer');
+      const topDir = path.join(process.cwd(), 'store', 'gamer');
 
-      // 創建目錄 (如果不存在)
       if (!fs.existsSync(topDir)) {
         fs.mkdirSync(topDir, { recursive: true });
       }
@@ -80,20 +61,12 @@ export class GamerService {
       const videoUrl = 'https://ani.gamer.com.tw/animeList.php?page=1&c=0';
       const html = await this.fetchHtml(videoUrl);
 
-      const pageNumStr = this.strBetween(
-        html,
-        '<div class="page_number">',
-        '/div>',
-      ).trim();
+      const pageNumStr = this.strBetween(html, '<div class="page_number">', '/div>').trim();
 
-      const pageNum = parseInt(
-        this.strBetween(pageNumStr, "...<a href='?page=", '&').trim(),
-      );
+      const pageNum = parseInt(this.strBetween(pageNumStr, "...<a href='?page=", '&').trim());
 
       // 限制最多爬取 15 頁
-      const maxPages = parseInt(
-        this.configService.get<string>('CRAWLER_MAX_PAGES') || '15',
-      );
+      const maxPages = parseInt(this.configService.get<string>('CRAWLER_MAX_PAGES') || '15');
       const pagesToCrawl = Math.min(pageNum, maxPages);
 
       this.logger.log(`總共有 ${pageNum} 頁動畫，將爬取前 ${pagesToCrawl} 頁`);
@@ -119,8 +92,7 @@ export class GamerService {
         // 解析頁面中的每個動畫項目
         $('.theme-list-main').each((index, element) => {
           const $el = $(element);
-          const pageLink =
-            'http://ani.gamer.com.tw/' + $el.attr('href')?.trim();
+          const pageLink = 'http://ani.gamer.com.tw/' + $el.attr('href')?.trim();
           const title = $el.find('.theme-name').text();
 
           // 提取圖片 URL
@@ -157,7 +129,7 @@ export class GamerService {
 
         // 避免請求過於頻繁
         if (pageIndex < pagesToCrawl) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
@@ -166,12 +138,7 @@ export class GamerService {
 
       // 將排序後的動畫依次添加到 movie_obj
       for (const anime of allAnimes) {
-        movie_obj.addMovie(
-          anime.title,
-          anime.img,
-          anime.pageLink,
-          anime.dateStr,
-        );
+        movie_obj.addMovie(anime.title, anime.img, anime.pageLink, anime.dateStr);
       }
 
       // 將結果保存為 JSON 檔案
@@ -180,9 +147,7 @@ export class GamerService {
       fs.writeFileSync(jsonFilePath, jsonStr);
 
       const movieCount = movie_obj.getMovieCount();
-      this.logger.log(
-        `成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`,
-      );
+      this.logger.log(`成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`);
 
       return {
         success: true,

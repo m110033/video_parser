@@ -14,7 +14,7 @@ export class MovieClass {
     movie_second_title: string,
   ): void {
     // 過濾掉相同標題的電影
-    const new_arr = this.movie_obj.movies.filter((x) => x.m_t !== movie_title);
+    const new_arr = this.movie_obj.movies.filter(x => x.m_t !== movie_title);
 
     // 在數組前端插入新電影
     new_arr.push({

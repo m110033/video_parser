@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { GamerParserDto } from './dto/gamer-parser.dto';
 import { Sleep } from 'src/common/functions/sleep.helper';
 import * as cheerio from 'cheerio';
+import { GetM3u8Ro } from './dto/get-m3u8.ro';
 
 interface GamerHeaders {
   'User-Agent': string;
@@ -149,12 +150,7 @@ export class AnimeService {
       this.logger.log(`VIP帳戶, 立即下載`);
     }
 
-    return {
-      success: true,
-      sn,
-      m3u8Url,
-      referer: refererUrl,
-    };
+    return new GetM3u8Ro(true, sn, m3u8Url, refererUrl);
   }
 
   async login(username: string, password: string) {
