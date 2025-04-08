@@ -15,45 +15,39 @@ import { createReadStream, existsSync } from 'fs';
 import * as fs from 'fs';
 import { Response } from 'express';
 import { AnimeService } from './anime.service';
+import { BaseController } from 'src/common/controller/base.controller';
+import { Site } from 'src/common/enums/site.enum';
 
-@Controller('parser')
-export class GamerController {
+@Controller('gamer')
+export class GamerController extends BaseController {
   private readonly logger = new Logger(GamerController.name);
 
   constructor(
     private readonly gamerService: GamerService,
     private readonly animeService: AnimeService,
-  ) {}
+  ) {
+    super();
+  }
 
-  @Get('proxy-test')
   async testProxy() {
     return await this.animeService.testProxy();
   }
 
-  @Post('gamer')
+  @Post('parser')
   async create(@Body() dto: GamerParserDto) {
     // 處理 POST 請求的邏輯
     return this.animeService.getM3U8Dict(dto);
   }
 
-  @Get('gamer/list')
+  @Get('list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
-  async downloadGamerList(
-    @Res({ passthrough: true }) res: Response,
-    @Query('debug') debug?: string,
-  ) {
-    const debugMode = debug === 'true';
-    const filePath = this.gamerService.getGamerJsonPath(debugMode);
+  downloadGamerList(@Res({ passthrough: true }) res: Response) {
+    const filePath = this.getGamerJsonPath(Site.GAMER);
 
     try {
       if (!existsSync(filePath)) {
-        this.logger.warn(`檔案不存在: ${filePath}，嘗試爬取...`);
-        await this.gamerService.crawlGamer(debugMode);
-
-        if (!existsSync(filePath)) {
-          throw new Error('無法生成 JSON 檔案');
-        }
+        throw new Error('無法生成 JSON 檔案');
       }
 
       const stats = fs.statSync(filePath);

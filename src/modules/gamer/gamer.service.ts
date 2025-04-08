@@ -7,12 +7,10 @@ import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import https from 'https';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import axios from 'axios';
+import { BaseService } from 'src/common/services/base.service';
 
 @Injectable()
-export class GamerService {
+export class GamerService extends BaseService {
   private readonly logger = new Logger(GamerService.name);
   private readonly userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
@@ -20,19 +18,8 @@ export class GamerService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-  ) {}
-
-  // 從字串中擷取兩個字符間的內容
-  private strBetween(str: string, start: string, end: string): string {
-    const startIndex = str.indexOf(start);
-    if (startIndex === -1) return '';
-
-    const startPosWithOffset = startIndex + start.length;
-    const endIndex = str.indexOf(end, startPosWithOffset);
-
-    if (endIndex === -1) return '';
-
-    return str.substring(startPosWithOffset, endIndex);
+  ) {
+    super();
   }
 
   /**
@@ -60,15 +47,12 @@ export class GamerService {
    * @returns 爬取到的動畫列表數據
    */
   @Cron(CronExpression.EVERY_HOUR)
-  async crawlGamer(debugMode: boolean = false): Promise<any> {
+  async crawlGamer(): Promise<any> {
     try {
       this.logger.log('開始爬取動畫瘋動畫列表...');
 
-      // 確定存儲目錄
-      const curDirectory = debugMode ? 'debug' : 'store';
-      const topDir = path.join(process.cwd(), curDirectory, 'gamer');
+      const topDir = path.join(process.cwd(), 'store', 'gamer');
 
-      // 創建目錄 (如果不存在)
       if (!fs.existsSync(topDir)) {
         fs.mkdirSync(topDir, { recursive: true });
       }
