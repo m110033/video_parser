@@ -50,10 +50,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       responseObj.body.error = exception.message;
     }
 
-    this.logger.error(
-      `Exception: ${exception.message}, Stack: ${exception.stack}`,
-      exception.stack,
-    );
+    this.logger.error(`Exception: ${exception.message}`);
 
     return response.status(responseObj.status).json({
       ...responseObj.body,
