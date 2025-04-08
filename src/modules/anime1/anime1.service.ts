@@ -26,7 +26,10 @@ export class Anime1Service extends BaseService {
     super();
   }
 
-  private async fetchHtml(url: string, headers?: Record<string, string>): Promise<string> {
+  private async fetchHtml(
+    url: string,
+    headers?: Record<string, string>,
+  ): Promise<string> {
     try {
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -109,7 +112,12 @@ export class Anime1Service extends BaseService {
 
       // 將排序後的動畫依次添加到 movie_obj
       for (const anime of allAnimes) {
-        movie_obj.addMovie(anime.title, anime.img, anime.pageLink, anime.dateStr);
+        movie_obj.addMovie(
+          anime.title,
+          anime.img,
+          anime.pageLink,
+          anime.dateStr,
+        );
       }
 
       // 將結果保存為 JSON 檔案
@@ -118,7 +126,9 @@ export class Anime1Service extends BaseService {
       fs.writeFileSync(jsonFilePath, jsonStr);
 
       const movieCount = movie_obj.getMovieCount();
-      this.logger.log(`成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`);
+      this.logger.log(
+        `成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`,
+      );
 
       return {
         success: true,

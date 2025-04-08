@@ -42,7 +42,7 @@ export class GamerController extends BaseController {
   @Get('list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
-  downloadGamerList(@Res({ passthrough: true }) res: Response, @Query('debug') debug?: string) {
+  downloadGamerList(@Res({ passthrough: true }) res: Response) {
     const filePath = this.getGamerJsonPath(Site.GAMER);
 
     try {

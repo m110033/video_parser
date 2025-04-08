@@ -13,7 +13,8 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const isProxyEnabled = configService.get<string>('IS_PROXY_ENABLED') === 'true';
+        const isProxyEnabled =
+          configService.get<string>('IS_PROXY_ENABLED') === 'true';
 
         if (isProxyEnabled) {
           const host = configService.get<string>('PROXY_HOST');

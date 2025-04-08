@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import puppeteer from 'puppeteer-extra';
-import { Browser, HTTPResponse, Page, PuppeteerLifeCycleEvent } from 'puppeteer';
+import {
+  Browser,
+  HTTPResponse,
+  Page,
+  PuppeteerLifeCycleEvent,
+} from 'puppeteer';
 import * as chromium from 'chromium';
 
 @Injectable()
@@ -26,7 +31,12 @@ export class CrawlerService {
 
     try {
       this.browser = await puppeteer.launch({
-        args: ['--disable-gpu', '--disable-setuid-sandbox', '--no-sandbox', '--no-zygote'],
+        args: [
+          '--disable-gpu',
+          '--disable-setuid-sandbox',
+          '--no-sandbox',
+          '--no-zygote',
+        ],
         headless: true,
         acceptInsecureCerts: true,
         executablePath: chromium.path,

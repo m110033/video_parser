@@ -33,7 +33,10 @@ export class Anime1Controller extends BaseController {
   @Get('list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
-  downloadList(@Res({ passthrough: true }) res: Response, @Query('debug') debug?: string) {
+  downloadList(
+    @Res({ passthrough: true }) res: Response,
+    @Query('debug') debug?: string,
+  ) {
     const filePath = this.getGamerJsonPath(Site.ANIME1);
 
     try {

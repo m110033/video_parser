@@ -28,7 +28,10 @@ export class GamerService extends BaseService {
    * @param headers 請求頭
    * @returns 頁面 HTML 內容
    */
-  private async fetchHtml(url: string, headers?: Record<string, string>): Promise<string> {
+  private async fetchHtml(
+    url: string,
+    headers?: Record<string, string>,
+  ): Promise<string> {
     try {
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -61,12 +64,20 @@ export class GamerService extends BaseService {
       const videoUrl = 'https://ani.gamer.com.tw/animeList.php?page=1&c=0';
       const html = await this.fetchHtml(videoUrl);
 
-      const pageNumStr = this.strBetween(html, '<div class="page_number">', '/div>').trim();
+      const pageNumStr = this.strBetween(
+        html,
+        '<div class="page_number">',
+        '/div>',
+      ).trim();
 
-      const pageNum = parseInt(this.strBetween(pageNumStr, "...<a href='?page=", '&').trim());
+      const pageNum = parseInt(
+        this.strBetween(pageNumStr, "...<a href='?page=", '&').trim(),
+      );
 
       // 限制最多爬取 15 頁
-      const maxPages = parseInt(this.configService.get<string>('CRAWLER_MAX_PAGES') || '15');
+      const maxPages = parseInt(
+        this.configService.get<string>('CRAWLER_MAX_PAGES') || '15',
+      );
       const pagesToCrawl = Math.min(pageNum, maxPages);
 
       this.logger.log(`總共有 ${pageNum} 頁動畫，將爬取前 ${pagesToCrawl} 頁`);
@@ -92,7 +103,8 @@ export class GamerService extends BaseService {
         // 解析頁面中的每個動畫項目
         $('.theme-list-main').each((index, element) => {
           const $el = $(element);
-          const pageLink = 'http://ani.gamer.com.tw/' + $el.attr('href')?.trim();
+          const pageLink =
+            'http://ani.gamer.com.tw/' + $el.attr('href')?.trim();
           const title = $el.find('.theme-name').text();
 
           // 提取圖片 URL
@@ -129,7 +141,7 @@ export class GamerService extends BaseService {
 
         // 避免請求過於頻繁
         if (pageIndex < pagesToCrawl) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
 
@@ -138,7 +150,12 @@ export class GamerService extends BaseService {
 
       // 將排序後的動畫依次添加到 movie_obj
       for (const anime of allAnimes) {
-        movie_obj.addMovie(anime.title, anime.img, anime.pageLink, anime.dateStr);
+        movie_obj.addMovie(
+          anime.title,
+          anime.img,
+          anime.pageLink,
+          anime.dateStr,
+        );
       }
 
       // 將結果保存為 JSON 檔案
@@ -147,7 +164,9 @@ export class GamerService extends BaseService {
       fs.writeFileSync(jsonFilePath, jsonStr);
 
       const movieCount = movie_obj.getMovieCount();
-      this.logger.log(`成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`);
+      this.logger.log(
+        `成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`,
+      );
 
       return {
         success: true,
