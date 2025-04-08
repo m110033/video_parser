@@ -79,7 +79,16 @@ export class Anime1Service extends BaseService {
       for (const anime of pageJson) {
         const cat = anime.at(0) || 1;
         const title = anime.at(1) || '無標題';
-        const year = anime.at(3) || 1991;
+        const yearValue = anime.at(3) || '1991';
+        let year: number;
+        if (typeof yearValue === 'string' && yearValue.includes('/')) {
+          year = parseInt(yearValue.split('/')[0], 10);
+        } else {
+          year = parseInt(String(yearValue), 10);
+        }
+        if (isNaN(year)) {
+          year = 1991; // 默認年份
+        }
         const season = anime.at(4) || '春';
         let monthNum = 1;
         switch (season) {
