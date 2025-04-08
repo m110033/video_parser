@@ -5,6 +5,6 @@ import path from 'path';
 @Controller('parser')
 export class BaseController {
   getGamerJsonPath(site: Site) {
-    return path.join(process.cwd(), 'store', site, 'gamer.json');
+    return path.join(process.cwd(), 'store', site, `${Site.ANIME1}.json`);
   }
 }

@@ -76,8 +76,8 @@ export class Anime1Service extends BaseService {
       for (const anime of pageJson) {
         const cat = anime.at(0) || 1;
         const title = anime.at(1) || '無標題';
-        const season = anime.at(2) || '春';
         const year = anime.at(3) || 1991;
+        const season = anime.at(4) || '春';
         let monthNum = 1;
         switch (season) {
           case '春':

@@ -30,7 +30,7 @@ export class Anime1Controller extends BaseController {
     return this.anime1Service.getM3U8Dict(dto);
   }
 
-  @Get('gamer/list')
+  @Get('anime1/list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
   downloadList(@Res({ passthrough: true }) res: Response, @Query('debug') debug?: string) {
