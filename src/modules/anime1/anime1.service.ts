@@ -43,81 +43,49 @@ export class Anime1Service extends BaseService {
     try {
       this.logger.log(`開始獲取 Anime1 M3U8 資訊: ${url}`);
 
-      // 從URL中提取SN (文章ID)
-      const urlMatch = url.match(/anime1\.me\/(\d+)/);
-      let sn = '';
-
-      if (urlMatch && urlMatch[1]) {
-        sn = urlMatch[1];
-      } else {
-        throw new Error('無法從 URL 提取影片 ID');
-      }
-
-      // 處理 Anime1 的頁面內容
+      // 載入 HTML
       const html = await this.fetchHtml(url);
       const $ = cheerio.load(html);
 
-      // 獲取視頻相關數據
-      // Anime1 一般將視頻嵌入在 iframe 或從 JavaScript 加載
-      let m3u8Url = '';
-      let iframeUrl = '';
+      // 取得 data-apireq
+      const dataApiReq = $('.entry-content .vjscontainer .video-js').attr('data-apireq');
+      if (!dataApiReq) throw new Error('無法取得 data-apireq 參數');
 
-      // 搜索影片框架
-      const iframe = $('iframe').first();
-      if (iframe.length > 0) {
-        iframeUrl = iframe.attr('src') || '';
+      // 建立 POST 請求資料
+      const jsonStr = decodeURIComponent(dataApiReq);
 
-        // 從 iframe URL 獲取實際視頻鏈接
-        if (iframeUrl) {
-          const iframeHtml = await this.fetchHtml(iframeUrl);
-          const iframeSource = iframeHtml.match(/source\s+src=['"]([^'"]+)['"]/i);
+      // 發送 POST 請求到 API 取得 mp4 連結
+      const response = await firstValueFrom(
+        this.httpService.post(
+          'https://v.anime1.me/api',
+          new URLSearchParams({
+            d: jsonStr,
+          }),
+          {
+            headers: {
+              'User-Agent': this.userAgent,
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Host: 'v.anime1.me',
+            },
+          },
+        ),
+      );
 
-          if (iframeSource && iframeSource[1]) {
-            m3u8Url = iframeSource[1];
-          }
-        }
+      const videoList = response.data?.s;
+      if (!videoList || videoList.length === 0 || !videoList[0].src) {
+        throw new Error('API 未返回有效的影片連結');
       }
 
-      // 嘗試從頁面腳本中提取視頻鏈接
-      if (!m3u8Url) {
-        const scripts = $('script')
-          .map((_, el) => $(el).html())
-          .get();
-        for (const script of scripts) {
-          // 尋找包含 m3u8 URL 的腳本
-          const m3u8Match = script?.match(/source\s+src=['"]([^'"]+\.m3u8[^'"]*)['"]/i);
-          if (m3u8Match && m3u8Match[1]) {
-            m3u8Url = m3u8Match[1];
-            break;
-          }
-
-          // 或者尋找包含 video.js 的配置
-          const videoJsMatch = script?.match(/source:\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i);
-          if (videoJsMatch && videoJsMatch[1]) {
-            m3u8Url = videoJsMatch[1];
-            break;
-          }
-        }
+      // 處理並補上協定（部分情況返回 //xxx.mp4）
+      let m3u8Url = videoList[0].src;
+      if (m3u8Url.startsWith('//')) {
+        m3u8Url = 'https:' + m3u8Url;
       }
 
-      // 如果頁面上沒有發現視頻鏈接，嘗試解析頁面上的 JavaScript 數據
-      if (!m3u8Url) {
-        const playerScript = $('script:contains("player")').html();
-        if (playerScript) {
-          const dataMatch = playerScript.match(/videosource\s*=\s*['"]([^'"]+)['"]/i);
-          if (dataMatch && dataMatch[1]) {
-            m3u8Url = dataMatch[1];
-          }
-        }
-      }
-
-      // 設置 referer URL (對於某些服務器來說這是必須的，用於防止直接訪問)
-      const refererUrl = url;
-
-      this.logger.log(`成功獲取 Anime1 視頻資訊: SN=${sn}, M3U8=${m3u8Url}`);
-      return new GetM3u8Ro(true, sn, m3u8Url, refererUrl);
+      this.logger.log(`成功取得影片連結: ${m3u8Url}`);
+      return new GetM3u8Ro(true, '', m3u8Url, url);
     } catch (error) {
-      this.logger.error(`獲取 Anime1 M3U8 失敗: ${error.message}`);
+      this.logger.error(`Anime1 M3U8 獲取失敗: ${error.message}`);
       return new GetM3u8Ro(false, '', '', '');
     }
   }

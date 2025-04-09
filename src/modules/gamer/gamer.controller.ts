@@ -35,14 +35,12 @@ export class GamerController extends BaseController {
 
   @Post('info')
   async getInfo(@Body() dto: GamerParserDto) {
-    // 處理 POST 請求的邏輯
-    return this.gamerService.parseGamerVideoPage(dto);
+    return await this.gamerService.parseGamerVideoPage(dto);
   }
 
   @Post('parser')
   async create(@Body() dto: GamerParserDto) {
-    // 處理 POST 請求的邏輯
-    return this.animeService.getM3U8Dict(dto);
+    return await this.animeService.getM3U8Dict(dto);
   }
 
   @Get('list')

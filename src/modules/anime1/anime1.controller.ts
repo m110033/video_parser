@@ -26,13 +26,13 @@ export class Anime1Controller extends BaseController {
   }
 
   @Post('info')
-  getInfo(@Body() dto: Anime1M3u8ParserDto) {
-    return this.anime1Service.parseAnime1VideoPage(dto);
+  async getInfo(@Body() dto: Anime1M3u8ParserDto) {
+    return await this.anime1Service.parseAnime1VideoPage(dto);
   }
 
   @Post('parser')
-  create(@Body() dto: Anime1M3u8ParserDto) {
-    return this.anime1Service.getM3U8Dict(dto);
+  async create(@Body() dto: Anime1M3u8ParserDto) {
+    return await this.anime1Service.getM3U8Dict(dto);
   }
 
   @Get('list')
