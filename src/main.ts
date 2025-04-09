@@ -26,9 +26,9 @@ async function bootstrap() {
 
   const keepAliveService = app.select(SystemModule).get(KeepAliveService);
 
-  await anime1Service.crawler();
+  // await anime1Service.crawler();
 
-  await gamerService.crawlGamer();
+  // await gamerService.crawlGamer();
 
   await keepAliveService.keepAlive();
 }

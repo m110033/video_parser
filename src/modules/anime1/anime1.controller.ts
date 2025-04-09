@@ -13,7 +13,7 @@ import { createReadStream, existsSync } from 'fs';
 import * as fs from 'fs';
 import { Response } from 'express';
 import { Anime1Service } from './anime1.service';
-import { Anime1ParserDto } from './dto/Anime1-parser.dto';
+import { Anime1ParserDto } from './dto/anime1-parser.dto';
 import { BaseController } from 'src/common/controller/base.controller';
 import { Site } from 'src/common/enums/site.enum';
 
@@ -25,6 +25,11 @@ export class Anime1Controller extends BaseController {
     super();
   }
 
+  @Post('info')
+  getInfo(@Body() dto: Anime1ParserDto) {
+    return this.anime1Service.parseAnime1VideoPage(dto);
+  }
+
   @Post('parser')
   create(@Body() dto: Anime1ParserDto) {
     return this.anime1Service.getM3U8Dict(dto);
@@ -33,10 +38,7 @@ export class Anime1Controller extends BaseController {
   @Get('list')
   @Header('Content-Type', 'application/json')
   @Header('Content-Disposition', 'attachment; filename="gamer.json"')
-  downloadList(
-    @Res({ passthrough: true }) res: Response,
-    @Query('debug') debug?: string,
-  ) {
+  downloadList(@Res({ passthrough: true }) res: Response, @Query('debug') debug?: string) {
     const filePath = this.getGamerJsonPath(Site.ANIME1);
 
     try {

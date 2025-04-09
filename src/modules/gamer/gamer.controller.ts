@@ -33,6 +33,12 @@ export class GamerController extends BaseController {
     return await this.animeService.testProxy();
   }
 
+  @Post('info')
+  async getInfo(@Body() dto: GamerParserDto) {
+    // 處理 POST 請求的邏輯
+    return this.gamerService.parseGamerVideoPage(dto);
+  }
+
   @Post('parser')
   async create(@Body() dto: GamerParserDto) {
     // 處理 POST 請求的邏輯

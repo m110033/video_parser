@@ -16,8 +16,7 @@ interface GamerHeaders {
 export class AnimeService {
   private logger = new Logger(AnimeService.name);
 
-  private readonly loginUrl =
-    'https://api.gamer.com.tw/mobile_app/user/v3/do_login.php';
+  private readonly loginUrl = 'https://api.gamer.com.tw/mobile_app/user/v3/do_login.php';
 
   private readonly userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
@@ -59,9 +58,7 @@ export class AnimeService {
     try {
       this.logger.log(`正在從 URL 解析 SN: ${url}`);
 
-      const response = await firstValueFrom(
-        this.httpService.get(url, { headers: this.headers }),
-      );
+      const response = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
       const html = response.data;
 
       const $ = cheerio.load(html);
@@ -71,8 +68,7 @@ export class AnimeService {
       if (ogMatch && ogMatch[1]) {
         SN = ogMatch[1];
       } else {
-        const videoLink =
-          $('a[href*="animeVideo.php?sn="]').first().attr('href') || '';
+        const videoLink = $('a[href*="animeVideo.php?sn="]').first().attr('href') || '';
         const linkMatch = videoLink.match(/sn=(\d+)/);
 
         if (linkMatch && linkMatch[1]) {
@@ -106,10 +102,7 @@ export class AnimeService {
     if (userInfo?.error && userInfo?.error?.code === 1007) {
       this.logger.log(`嘗試登入...`);
 
-      await this.login(
-        process.env.GAMER_USER || '',
-        process.env.GAMER_PASSWORD || '',
-      );
+      await this.login(process.env.GAMER_USER || '', process.env.GAMER_PASSWORD || '');
     }
 
     this.logger.log(`嘗試獲取設備 ID...`);
@@ -178,7 +171,7 @@ export class AnimeService {
       if (!cookies) {
         throw new Error('無法獲取 Cookies');
       }
-      cookies.map((cookie) => {
+      cookies.map(cookie => {
         const [name, value] = cookie.split(';')[0].split('=');
         this.cookies[name] = value;
       });
@@ -190,14 +183,12 @@ export class AnimeService {
 
   private async getDeviceId(headers: any) {
     const url = 'https://ani.gamer.com.tw/ajax/getdeviceid.php';
-    const response = await firstValueFrom(
-      this.httpService.get(url, { headers }),
-    );
+    const response = await firstValueFrom(this.httpService.get(url, { headers }));
     const cookies = response.headers['set-cookie'];
     if (!cookies) {
       throw new Error('無法獲取 Cookies');
     }
-    const bunchOfCookies = cookies.map((cookie) => {
+    const bunchOfCookies = cookies.map(cookie => {
       const [name, value] = cookie.split(';')[0].split('=');
       return { name, value };
     });
@@ -207,25 +198,19 @@ export class AnimeService {
   private async gainAccess(sn: string): Promise<any> {
     const hash = this.randomString(12);
     const url = `https://ani.gamer.com.tw/ajax/token.php?adID=0&sn=${sn}&device=${this.deviceId}&hash=${hash}`;
-    const res = await firstValueFrom(
-      this.httpService.get(url, { headers: this.headers }),
-    );
+    const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
     return res.data;
   }
 
   private async unlock(sn: string) {
     const url = `https://ani.gamer.com.tw/ajax/unlock.php?sn=${sn}&ttl=0`;
-    const res = await firstValueFrom(
-      this.httpService.get(url, { headers: this.headers }),
-    );
+    const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
     return res.data;
   }
 
   private async checkLock(sn: string) {
     const url = `https://ani.gamer.com.tw/ajax/checklock.php?device=${this.deviceId}&sn=${sn}`;
-    const res = await firstValueFrom(
-      this.httpService.get(url, { headers: this.headers }),
-    );
+    const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
     return res.data;
   }
 
@@ -241,27 +226,21 @@ export class AnimeService {
 
   private async videoStart(sn: string): Promise<void> {
     const url = `https://ani.gamer.com.tw/ajax/videoStart.php?sn=${sn}`;
-    const res = await firstValueFrom(
-      this.httpService.get(url, { headers: this.headers }),
-    );
+    const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
     this.logger.log(`開始播放: ${JSON.stringify(res.data)}`);
   }
 
   private async checkNoAd(sn: string, errorCount = 10): Promise<void> {
     const hash = this.randomString(12);
     const url = `https://ani.gamer.com.tw/ajax/token.php?sn=${sn}&device=${this.deviceId}&hash=${hash}`;
-    const res = await firstValueFrom(
-      this.httpService.get(url, { headers: this.headers }),
-    );
+    const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
     const data = res.data;
     this.logger.log(`廣告檢查: ${JSON.stringify(data)}`);
   }
 
   private async getPlaylist(sn: string) {
     const url = `https://ani.gamer.com.tw/ajax/m3u8.php?sn=${sn}&device=${this.deviceId}`;
-    const res = await firstValueFrom(
-      this.httpService.get(url, { headers: this.headers }),
-    );
+    const res = await firstValueFrom(this.httpService.get(url, { headers: this.headers }));
     return res.data;
   }
 

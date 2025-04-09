@@ -13,4 +13,13 @@ export class BaseService {
 
     return str.substring(startPosWithOffset, endIndex);
   }
+
+  protected stripHtml(html: string): string {
+    // 移除所有 HTML 標籤
+    return html
+      .replace(/<[^>]*>?/gm, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\n\s*\n/g, '\n') // 移除多餘的換行
+      .trim();
+  }
 }

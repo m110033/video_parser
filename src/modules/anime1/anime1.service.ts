@@ -6,11 +6,13 @@ import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Anime1ParserDto } from './dto/Anime1-parser.dto';
+import { Anime1ParserDto } from './dto/anime1-parser.dto';
 import { GetM3u8Ro } from '../gamer/dto/get-m3u8.ro';
 import dayjs from 'dayjs';
 import { Site } from 'src/common/enums/site.enum';
 import { BaseService } from 'src/common/services/base.service';
+import * as cheerio from 'cheerio';
+import { VideoList, VideoPageRo } from '../gamer/gamer.service';
 
 @Injectable()
 export class Anime1Service extends BaseService {
@@ -26,10 +28,7 @@ export class Anime1Service extends BaseService {
     super();
   }
 
-  private async fetchHtml(
-    url: string,
-    headers?: Record<string, string>,
-  ): Promise<string> {
+  private async fetchHtml(url: string, headers?: Record<string, string>): Promise<string> {
     try {
       const response = await firstValueFrom(this.httpService.get(url));
       return response.data;
@@ -39,15 +38,170 @@ export class Anime1Service extends BaseService {
     }
   }
 
-  getM3U8Dict(dto: Anime1ParserDto): GetM3u8Ro {
-    let sn = '';
-    let m3u8Url = '';
-    let refererUrl = '';
-    sn = 'test';
-    m3u8Url = 'https://test.m3u8';
-    refererUrl = 'https://test.referer';
-    const ro = new GetM3u8Ro(true, sn, m3u8Url, refererUrl);
-    return ro;
+  async getM3U8Dict(dto: Anime1ParserDto): Promise<GetM3u8Ro> {
+    const { url } = dto;
+
+    try {
+      this.logger.log(`開始獲取 Anime1 M3U8 資訊: ${url}`);
+
+      // 從URL中提取SN (文章ID)
+      const urlMatch = url.match(/anime1\.me\/(\d+)/);
+      let sn = '';
+
+      if (urlMatch && urlMatch[1]) {
+        sn = urlMatch[1];
+      } else {
+        throw new Error('無法從 URL 提取影片 ID');
+      }
+
+      // 處理 Anime1 的頁面內容
+      const html = await this.fetchHtml(url);
+      const $ = cheerio.load(html);
+
+      // 獲取視頻相關數據
+      // Anime1 一般將視頻嵌入在 iframe 或從 JavaScript 加載
+      let m3u8Url = '';
+      let iframeUrl = '';
+
+      // 搜索影片框架
+      const iframe = $('iframe').first();
+      if (iframe.length > 0) {
+        iframeUrl = iframe.attr('src') || '';
+
+        // 從 iframe URL 獲取實際視頻鏈接
+        if (iframeUrl) {
+          const iframeHtml = await this.fetchHtml(iframeUrl);
+          const iframeSource = iframeHtml.match(/source\s+src=['"]([^'"]+)['"]/i);
+
+          if (iframeSource && iframeSource[1]) {
+            m3u8Url = iframeSource[1];
+          }
+        }
+      }
+
+      // 嘗試從頁面腳本中提取視頻鏈接
+      if (!m3u8Url) {
+        const scripts = $('script')
+          .map((_, el) => $(el).html())
+          .get();
+        for (const script of scripts) {
+          // 尋找包含 m3u8 URL 的腳本
+          const m3u8Match = script?.match(/source\s+src=['"]([^'"]+\.m3u8[^'"]*)['"]/i);
+          if (m3u8Match && m3u8Match[1]) {
+            m3u8Url = m3u8Match[1];
+            break;
+          }
+
+          // 或者尋找包含 video.js 的配置
+          const videoJsMatch = script?.match(/source:\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i);
+          if (videoJsMatch && videoJsMatch[1]) {
+            m3u8Url = videoJsMatch[1];
+            break;
+          }
+        }
+      }
+
+      // 如果頁面上沒有發現視頻鏈接，嘗試解析頁面上的 JavaScript 數據
+      if (!m3u8Url) {
+        const playerScript = $('script:contains("player")').html();
+        if (playerScript) {
+          const dataMatch = playerScript.match(/videosource\s*=\s*['"]([^'"]+)['"]/i);
+          if (dataMatch && dataMatch[1]) {
+            m3u8Url = dataMatch[1];
+          }
+        }
+      }
+
+      // 設置 referer URL (對於某些服務器來說這是必須的，用於防止直接訪問)
+      const refererUrl = url;
+
+      this.logger.log(`成功獲取 Anime1 視頻資訊: SN=${sn}, M3U8=${m3u8Url}`);
+      return new GetM3u8Ro(true, sn, m3u8Url, refererUrl);
+    } catch (error) {
+      this.logger.error(`獲取 Anime1 M3U8 失敗: ${error.message}`);
+      return new GetM3u8Ro(false, '', '', '');
+    }
+  }
+
+  async parseAnime1VideoPage(dto: Anime1ParserDto): Promise<VideoPageRo> {
+    const { url } = dto;
+
+    try {
+      this.logger.log(`開始解析 Anime1 視頻頁面: ${url}`);
+      const videoMoviesList: Array<VideoList> = [];
+      let hasMatch = false;
+      let hasNextPage = false;
+      let currentPage = 1;
+      let baseUrl = url;
+      const cleanIntro = '';
+
+      // 處理分頁，確保我們從第一頁開始
+      if (url.includes('/page/')) {
+        baseUrl = url.split('/page/')[0];
+      }
+
+      // 持續處理所有頁面，直到沒有下一頁
+      do {
+        const pageUrl = currentPage === 1 ? baseUrl : `${baseUrl}/page/${currentPage}`;
+        this.logger.debug(`正在處理頁面: ${pageUrl}`);
+
+        const html = await this.fetchHtml(pageUrl);
+        const $ = cheerio.load(html);
+
+        $('article.post').each((_, article) => {
+          const $article = $(article);
+
+          const titleElement = $article.find('.entry-title a');
+          const title = titleElement.text().trim();
+          const videoUrl = titleElement.attr('href') || '';
+
+          if (videoUrl) {
+            hasMatch = true;
+
+            videoMoviesList.push({
+              title: title,
+              videoUrl: videoUrl,
+              siteName: 'anime1',
+            });
+          }
+        });
+
+        hasNextPage = $('.nav-links .nav-previous a').length > 0;
+
+        if (hasNextPage) {
+          currentPage++;
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } while (hasNextPage);
+
+      if (!hasMatch) {
+        videoMoviesList.push({
+          title: '1',
+          videoUrl: url,
+          siteName: 'anime1',
+        });
+      }
+
+      this.logger.log(`已解析 ${videoMoviesList.length} 個視頻連結`);
+
+      // 影片按集數排序（假設標題是數字）
+      videoMoviesList.sort((a, b) => {
+        const numA = parseInt(a.title) || 0;
+        const numB = parseInt(b.title) || 0;
+        return numA - numB;
+      });
+
+      return {
+        description: cleanIntro,
+        videoList: videoMoviesList,
+      };
+    } catch (error) {
+      this.logger.error(`解析 Anime1 視頻頁面失敗 [${url}]: ${error.message}`);
+      return {
+        description: '',
+        videoList: [],
+      };
+    }
   }
 
   async crawler(): Promise<any> {
@@ -121,12 +275,7 @@ export class Anime1Service extends BaseService {
 
       // 將排序後的動畫依次添加到 movie_obj
       for (const anime of allAnimes) {
-        movie_obj.addMovie(
-          anime.title,
-          anime.img,
-          anime.pageLink,
-          anime.dateStr,
-        );
+        movie_obj.addMovie(anime.title, anime.img, anime.pageLink, anime.dateStr);
       }
 
       // 將結果保存為 JSON 檔案
@@ -135,9 +284,7 @@ export class Anime1Service extends BaseService {
       fs.writeFileSync(jsonFilePath, jsonStr);
 
       const movieCount = movie_obj.getMovieCount();
-      this.logger.log(
-        `成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`,
-      );
+      this.logger.log(`成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`);
 
       return {
         success: true,
