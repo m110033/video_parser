@@ -13,9 +13,9 @@ import { createReadStream, existsSync } from 'fs';
 import * as fs from 'fs';
 import { Response } from 'express';
 import { Anime1Service } from './anime1.service';
-import { Anime1ParserDto } from './dto/anime1-parser.dto';
 import { BaseController } from 'src/common/controller/base.controller';
 import { Site } from 'src/common/enums/site.enum';
+import { Anime1ParserDto } from './dto/anime1-parser.dto';
 
 @Controller('anime1')
 export class Anime1Controller extends BaseController {
