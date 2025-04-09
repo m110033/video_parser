@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class Anime1ParserDto {
+export class Anime1M3u8ParserDto {
   @IsOptional()
   @IsString()
   cat?: string;

@@ -15,7 +15,7 @@ import { Response } from 'express';
 import { Anime1Service } from './anime1.service';
 import { BaseController } from 'src/common/controller/base.controller';
 import { Site } from 'src/common/enums/site.enum';
-import { Anime1ParserDto } from './dto/anime1-parser.dto';
+import { Anime1M3u8ParserDto } from './dto/anime1-m3u8-parser.dto';
 
 @Controller('anime1')
 export class Anime1Controller extends BaseController {
@@ -26,12 +26,12 @@ export class Anime1Controller extends BaseController {
   }
 
   @Post('info')
-  getInfo(@Body() dto: Anime1ParserDto) {
+  getInfo(@Body() dto: Anime1M3u8ParserDto) {
     return this.anime1Service.parseAnime1VideoPage(dto);
   }
 
   @Post('parser')
-  create(@Body() dto: Anime1ParserDto) {
+  create(@Body() dto: Anime1M3u8ParserDto) {
     return this.anime1Service.getM3U8Dict(dto);
   }
 

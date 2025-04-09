@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Cron } from '@nestjs/schedule';
 import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -12,7 +11,7 @@ import { Site } from 'src/common/enums/site.enum';
 import { BaseService } from 'src/common/services/base.service';
 import * as cheerio from 'cheerio';
 import { VideoList, VideoPageRo } from '../gamer/gamer.service';
-import { Anime1ParserDto } from './dto/anime1-parser.dto';
+import { Anime1M3u8ParserDto } from './dto/anime1-m3u8-parser.dto';
 
 @Injectable()
 export class Anime1Service extends BaseService {
@@ -38,7 +37,7 @@ export class Anime1Service extends BaseService {
     }
   }
 
-  async getM3U8Dict(dto: Anime1ParserDto): Promise<GetM3u8Ro> {
+  async getM3U8Dict(dto: Anime1M3u8ParserDto): Promise<GetM3u8Ro> {
     const { url } = dto;
 
     try {
@@ -123,7 +122,7 @@ export class Anime1Service extends BaseService {
     }
   }
 
-  async parseAnime1VideoPage(dto: Anime1ParserDto): Promise<VideoPageRo> {
+  async parseAnime1VideoPage(dto: Anime1M3u8ParserDto): Promise<VideoPageRo> {
     const { url } = dto;
 
     try {
