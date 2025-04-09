@@ -102,13 +102,12 @@ export class Anime1Service extends BaseService {
       let baseUrl = url;
       const cleanIntro = '';
 
-      // 處理分頁，確保我們從第一頁開始
-      if (url.includes('/page/')) {
-        baseUrl = url.split('/page/')[0];
-      }
-
-      // 持續處理所有頁面，直到沒有下一頁
       do {
+        // 處理分頁，確保我們從第一頁開始
+        if (baseUrl.includes('/page/')) {
+          baseUrl = baseUrl.split('/page/')[0];
+        }
+
         const pageUrl = currentPage === 1 ? baseUrl : `${baseUrl}/page/${currentPage}`;
         this.logger.debug(`正在處理頁面: ${pageUrl}`);
 
@@ -136,6 +135,7 @@ export class Anime1Service extends BaseService {
         hasNextPage = $('.nav-links .nav-previous a').length > 0;
 
         if (hasNextPage) {
+          baseUrl = $('.nav-links .nav-previous a').attr('href') || baseUrl;
           currentPage++;
           await new Promise(resolve => setTimeout(resolve, 500));
         }
