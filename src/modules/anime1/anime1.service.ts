@@ -6,13 +6,13 @@ import { MovieClass } from 'src/common/movie.model';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Anime1ParserDto } from './dto/anime1-parser.dto';
 import { GetM3u8Ro } from '../gamer/dto/get-m3u8.ro';
 import dayjs from 'dayjs';
 import { Site } from 'src/common/enums/site.enum';
 import { BaseService } from 'src/common/services/base.service';
 import * as cheerio from 'cheerio';
 import { VideoList, VideoPageRo } from '../gamer/gamer.service';
+import { Anime1ParserDto } from './dto/anime1-parser.dto';
 
 @Injectable()
 export class Anime1Service extends BaseService {
