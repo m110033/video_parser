@@ -143,7 +143,7 @@ export class AnimeService {
       this.logger.log(`VIP帳戶, 立即下載`);
     }
 
-    return new GetM3u8Ro(true, sn, m3u8Url, refererUrl);
+    return new GetM3u8Ro(true, sn, m3u8Url, refererUrl, '');
   }
 
   async login(username: string, password: string) {

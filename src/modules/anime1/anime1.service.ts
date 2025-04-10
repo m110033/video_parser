@@ -76,6 +76,19 @@ export class Anime1Service extends BaseService {
         throw new Error('API 未返回有效的影片連結');
       }
 
+      const cookies = response.headers['set-cookie'];
+      if (!cookies) {
+        throw new Error('無法獲取 Cookies');
+      }
+
+      const cookieString =
+        cookies
+          .map(cookie => {
+            const [name, value] = cookie.split(';')[0].split('=');
+            return `${name}=${value}`;
+          })
+          .join('; ') + ';';
+
       // 處理並補上協定（部分情況返回 //xxx.mp4）
       let m3u8Url = videoList[0].src;
       if (m3u8Url.startsWith('//')) {
@@ -83,10 +96,10 @@ export class Anime1Service extends BaseService {
       }
 
       this.logger.log(`成功取得影片連結: ${m3u8Url}`);
-      return new GetM3u8Ro(true, '', m3u8Url, url);
+      return new GetM3u8Ro(true, '', m3u8Url, url, cookieString);
     } catch (error) {
       this.logger.error(`Anime1 M3U8 獲取失敗: ${error.message}`);
-      return new GetM3u8Ro(false, '', '', '');
+      return new GetM3u8Ro(false, '', '', '', '');
     }
   }
 
