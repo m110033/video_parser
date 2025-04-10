@@ -14,11 +14,10 @@ export class KeepAliveService {
     private readonly configService: ConfigService,
   ) {
     // 從環境變數取得應用 URL，或使用默認值
-    this.appUrl =
-      this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+    this.appUrl = this.configService.get<string>('APP_URL') || 'http://localhost:3000';
   }
 
-  @Cron('0 */14 * * * *') // 每 14 分鐘執行一次
+  // @Cron('0 */14 * * * *') // 每 14 分鐘執行一次
   async keepAlive() {
     try {
       this.logger.log('執行定時保活任務...');
@@ -26,7 +25,7 @@ export class KeepAliveService {
       // 呼叫健康檢查接口
       const response = await lastValueFrom(
         this.httpService.get(`${this.appUrl}/system/health`).pipe(
-          catchError((error) => {
+          catchError(error => {
             this.logger.error(`保活請求失敗: ${error.message}`);
             throw error;
           }),
