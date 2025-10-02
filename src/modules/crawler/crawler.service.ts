@@ -130,4 +130,15 @@ export class CrawlerService {
   getPageResponse() {
     return this.pageResponse;
   }
+
+  async close() {
+    if (this.browser) {
+      this.logger.log('closing browser...');
+      await this.browser.close();
+      this.browser = undefined;
+      this.page = undefined;
+      this.pageResponse = undefined;
+      this.logger.log('browser closed.');
+    }
+  }
 }

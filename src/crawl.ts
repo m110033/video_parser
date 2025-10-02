@@ -11,11 +11,19 @@ async function bootstrap() {
   const gamerService = app.get(GamerService);
   const anime1Service = app.get(Anime1Service);
 
-  await crawlerService.init();
-  await gamerService.crawlGamer();
-  await anime1Service.crawler();
-
-  await app.close();
+  try {
+    await crawlerService.init();
+    await gamerService.crawlGamer();
+    await anime1Service.crawler();
+  } catch (error) {
+    console.error('爬蟲執行過程中發生錯誤:', error);
+  } finally {
+    // 確保瀏覽器關閉
+    await crawlerService.close();
+    await app.close();
+    console.log('爬蟲執行完成，程序結束');
+    process.exit(0);
+  }
 }
 
 bootstrap();
