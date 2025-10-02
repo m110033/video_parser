@@ -1,16 +1,16 @@
-name: Run Crawler
-
+name: Run NestJS Crawler
+  
 on:
   schedule:
-    - cron: "0 2 * * *"   # UTC 時間每天 00:00 執行（台灣時間 +8hr = 早上 08:00）
-  workflow_dispatch:       # 允許你手動在 GitHub Actions 介面觸發
+    - cron: "0 * * * *"
+  workflow_dispatch:
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -19,7 +19,9 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run crawler
         run: npm run crawl
+        env:
+          NODE_ENV: production
