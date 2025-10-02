@@ -1,0 +1,25 @@
+name: Run Crawler
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # UTC 時間每天 00:00 執行（台灣時間 +8hr = 早上 08:00）
+  workflow_dispatch:       # 允許你手動在 GitHub Actions 介面觸發
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run crawler
+        run: npm run crawl
