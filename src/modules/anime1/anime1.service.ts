@@ -194,8 +194,8 @@ export class Anime1Service extends BaseService {
         fs.mkdirSync(topDir, { recursive: true });
       }
 
-      // 使用 MovieClass 替代直接操作數組
-      const movie_obj = new MovieClass();
+      const baseServiceUrl =
+        this.configService.get<string>('SERVICE_BASE_URL')?.replace(/\/$/, '') || '';
 
       // 收集所有動畫數據，以便後續排序
       const allAnimes: Array<{
@@ -253,24 +253,43 @@ export class Anime1Service extends BaseService {
       // 按日期排序所有動畫 (降序，最新日期在前)
       allAnimes.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
-      // 將排序後的動畫依次添加到 movie_obj
-      for (const anime of allAnimes) {
-        movie_obj.addMovie(anime.title, anime.img, anime.pageLink, anime.dateStr);
-      }
+      const content = allAnimes.map(anime => {
+        const id = anime.pageLink;
+        const videoEndpoint = baseServiceUrl
+          ? `${baseServiceUrl}/anime1/m3u8?url=${encodeURIComponent(anime.pageLink)}`
+          : '';
+        return {
+          id,
+          name: anime.title,
+          description: '',
+          uri: anime.pageLink,
+          videoUri: videoEndpoint,
+          thumbnailUri: anime.img || '',
+          backgroundUri: anime.img || '',
+          category: `anime1 - ${anime.title}`,
+          duration: '',
+          seriesUri: anime.pageLink,
+          episodeNumber: '',
+          videoType: 'episode',
+          seasonNumber: '',
+          seasonUri: '',
+        };
+      });
 
-      // 將結果保存為 JSON 檔案
-      const jsonStr = movie_obj.dictToJson();
+      const apiStyle = {
+        content,
+        metadata: { last_updated: new Date().toISOString() },
+      };
+
       const jsonFilePath = path.join(topDir, `${Site.ANIME1}.json`);
-      fs.writeFileSync(jsonFilePath, jsonStr);
+      fs.writeFileSync(jsonFilePath, JSON.stringify(apiStyle, null, 2));
 
-      const movieCount = movie_obj.getMovieCount();
-      this.logger.log(`成功爬取 ${movieCount} 個動畫，結果已保存至 ${jsonFilePath}`);
+      this.logger.log(`成功爬取 ${content.length} 個動畫，結果已保存至 ${jsonFilePath}`);
 
       return {
         success: true,
-        count: movieCount,
+        count: content.length,
         filePath: jsonFilePath,
-        movies: movie_obj.getMovies(),
       };
     } catch (error) {
       this.logger.error(`爬取動畫瘋列表失敗: ${error.message}`, error.stack);

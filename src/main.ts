@@ -30,6 +30,6 @@ async function bootstrap() {
 
   await gamerService.crawlGamer();
 
-  await keepAliveService.keepAlive();
+  // await keepAliveService.keepAlive();
 }
 bootstrap();

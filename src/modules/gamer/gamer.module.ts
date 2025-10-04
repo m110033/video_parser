@@ -6,6 +6,7 @@ import { AnimeService } from './anime.service';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { M3u8CacheService } from 'src/common/services/m3u8-cache.service';
 
 @Module({
   imports: [
@@ -36,6 +37,6 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
     CrawlerModule,
   ],
   controllers: [GamerController],
-  providers: [GamerService, AnimeService],
+  providers: [GamerService, AnimeService, M3u8CacheService],
 })
 export class GamerModule {}
