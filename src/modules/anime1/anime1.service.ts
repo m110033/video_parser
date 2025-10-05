@@ -96,10 +96,11 @@ export class Anime1Service extends BaseService {
       }
 
       this.logger.log(`成功取得影片連結: ${m3u8Url}`);
-      return new GetM3u8Ro(true, '', m3u8Url, url, cookieString);
+      const origin = 'https://anime1.me';
+      return new GetM3u8Ro(true, '', m3u8Url, url, cookieString, origin);
     } catch (error) {
       this.logger.error(`Anime1 M3U8 獲取失敗: ${error.message}`);
-      return new GetM3u8Ro(false, '', '', '', '');
+      return new GetM3u8Ro(false, '', '', '', '', 'https://anime1.me');
     }
   }
 
@@ -116,7 +117,6 @@ export class Anime1Service extends BaseService {
       const cleanIntro = '';
 
       do {
-        // 處理分頁，確保我們從第一頁開始
         if (baseUrl.includes('/page/')) {
           baseUrl = baseUrl.split('/page/')[0];
         }
@@ -255,15 +255,16 @@ export class Anime1Service extends BaseService {
 
       const content = allAnimes.map(anime => {
         const id = anime.pageLink;
-        const videoEndpoint = baseServiceUrl
-          ? `${baseServiceUrl}/anime1/m3u8?url=${encodeURIComponent(anime.pageLink)}`
+        const episodeUrl = baseServiceUrl
+          ? `${baseServiceUrl}/anime1/episodes?url=${encodeURIComponent(anime.pageLink)}`
           : '';
         return {
           id,
           name: anime.title,
           description: '',
           uri: anime.pageLink,
-          videoUri: videoEndpoint,
+          videoUri: '', // 不直接提供 m3u8 解析端點
+          episodeUrl,
           thumbnailUri: anime.img || '',
           backgroundUri: anime.img || '',
           category: `anime1 - ${anime.title}`,
@@ -292,7 +293,7 @@ export class Anime1Service extends BaseService {
         filePath: jsonFilePath,
       };
     } catch (error) {
-      this.logger.error(`爬取動畫瘋列表失敗: ${error.message}`, error.stack);
+      this.logger.error(`爬取 Anime1 列表失敗: ${error.message}`, error.stack);
       return {
         success: false,
         error: error.message || '發生錯誤',

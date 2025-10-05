@@ -6,6 +6,7 @@ export interface CachedM3u8Entry {
   m3u8Url: string;
   referer: string;
   cookies: string;
+  origin: string;
   expiresAt: number; // epoch ms
   lastFetched: number; // epoch ms
   site: string; // gamer | anime1

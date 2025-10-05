@@ -82,16 +82,26 @@ export class GamerController extends BaseController {
       this.cacheService.markViewed(clientIp, videoId);
       let cached = force !== 'true' ? this.cacheService.get(videoId) : undefined;
       if (cached) {
-        return res.json(new GetM3u8Ro(true, snMatch ? snMatch[1] : '', cached.m3u8Url, cached.referer, cached.cookies));
+        return res.json(
+          new GetM3u8Ro(
+            true,
+            snMatch ? snMatch[1] : '',
+            cached.m3u8Url,
+            cached.referer,
+            cached.cookies,
+            cached.origin,
+          ),
+        );
       }
       // Trigger fetch
-  const data = await this.animeService.getM3U8Dict({ url, sn: snMatch ? snMatch[1] : '' });
+      const data = await this.animeService.getM3U8Dict({ url, sn: snMatch ? snMatch[1] : '' });
       if (data?.m3u8Url) {
         this.cacheService.set({
           videoId,
           m3u8Url: data.m3u8Url,
           referer: data.referer,
           cookies: data.cookies,
+          origin: data.origin || 'https://ani.gamer.com.tw',
           site: Site.GAMER,
         });
       }

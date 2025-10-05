@@ -151,17 +151,18 @@ export class GamerService extends BaseService {
       // 轉換為 api.json style
       const content = allAnimes.map(anime => {
         const id = anime.pageLink;
-        const videoEndpoint = baseServiceUrl
-          ? `${baseServiceUrl}/gamer/m3u8?url=${encodeURIComponent(anime.pageLink)}`
+        const episodeUrl = baseServiceUrl
+          ? `${baseServiceUrl}/gamer/episodes?url=${encodeURIComponent(anime.pageLink)}`
           : '';
         return {
           id, // 使用頁面連結作為 id
           name: anime.title,
-            description: '',
+          description: '',
           uri: anime.pageLink,
-          videoUri: videoEndpoint, // 播放器將呼叫此服務再解析真實 m3u8
+          videoUri: '', // 不直接提供 m3u8 解析端點
+          episodeUrl, // 新增: 取得所有集數與 videoUri 的入口
           thumbnailUri: anime.img || '',
-          backgroundUri: anime.img || '',
+            backgroundUri: anime.img || '',
           category: `gamer - ${anime.title}`,
           duration: '',
           seriesUri: anime.pageLink,

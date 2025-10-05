@@ -18,6 +18,7 @@ import { Site } from 'src/common/enums/site.enum';
 import { Anime1M3u8ParserDto } from './dto/anime1-m3u8-parser.dto';
 import { M3u8CacheService } from 'src/common/services/m3u8-cache.service';
 import { GetM3u8Ro } from '../gamer/dto/get-m3u8.ro';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('anime1')
 export class Anime1Controller extends BaseController {
@@ -26,6 +27,7 @@ export class Anime1Controller extends BaseController {
   constructor(
     private readonly anime1Service: Anime1Service,
     private readonly cacheService: M3u8CacheService,
+    private readonly configService: ConfigService,
   ) {
     super();
   }
@@ -33,6 +35,35 @@ export class Anime1Controller extends BaseController {
   @Post('info')
   async getInfo(@Body() dto: Anime1M3u8ParserDto) {
     return await this.anime1Service.parseAnime1VideoPage(dto);
+  }
+
+  // 取得 Anime1 作品所有集數 (列表頁 + 分頁聚合)
+  @Get('episodes')
+  async getEpisodes(@Query('url') url: string, @Res() res: Response) {
+    if (!url) {
+      return res.status(400).json({ success: false, message: '缺少 url 參數' });
+    }
+    try {
+      const baseServiceUrl = this.configService
+        .get<string>('SERVICE_BASE_URL')?.replace(/\/$/, '') || '';
+      const page = await this.anime1Service.parseAnime1VideoPage({ url });
+      const episodes = page.videoList.map(ep => ({
+        title: ep.title,
+        originalUrl: ep.videoUrl,
+        videoUri: baseServiceUrl
+          ? `${baseServiceUrl}/anime1/m3u8?url=${encodeURIComponent(ep.videoUrl)}`
+          : '',
+      }));
+      return res.json({
+        success: true,
+        description: page.description,
+        count: episodes.length,
+        episodes,
+      });
+    } catch (error) {
+      this.logger.error(`取得 Anime1 集數失敗: ${error.message}`);
+      return res.status(500).json({ success: false, message: '解析失敗', error: error.message });
+    }
   }
 
   @Get('m3u8')
@@ -47,7 +78,9 @@ export class Anime1Controller extends BaseController {
       this.cacheService.markViewed(clientIp, videoId);
       const cached = force !== 'true' ? this.cacheService.get(videoId) : undefined;
       if (cached) {
-        return res.json(new GetM3u8Ro(true, '', cached.m3u8Url, cached.referer, cached.cookies));
+        return res.json(
+          new GetM3u8Ro(true, '', cached.m3u8Url, cached.referer, cached.cookies, cached.origin),
+        );
       }
       const data = await this.anime1Service.getM3U8Dict({ url });
       if (data?.m3u8Url) {
@@ -56,6 +89,7 @@ export class Anime1Controller extends BaseController {
           m3u8Url: data.m3u8Url,
           referer: data.referer,
           cookies: data.cookies,
+          origin: data.origin || 'https://anime1.me',
           site: Site.ANIME1,
         });
       }
