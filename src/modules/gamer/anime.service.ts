@@ -143,7 +143,8 @@ export class AnimeService {
       this.logger.log(`VIP帳戶, 立即下載`);
     }
 
-    return new GetM3u8Ro(true, sn, m3u8Url, refererUrl, '');
+    const origin = 'https://ani.gamer.com.tw';
+    return new GetM3u8Ro(true, sn, m3u8Url, refererUrl, '', origin);
   }
 
   async login(username: string, password: string) {
